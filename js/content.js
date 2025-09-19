@@ -62,22 +62,39 @@ function update_is_home_attrb() {
 // =======================
 // Logo Link Handling
 // =======================
+
+function navigateToSubscriptions() {
+    const url = "/feed/subscriptions"; // relative URL
+
+
+    // If already on subscriptions, do nothing
+    if (window.location.pathname === url) return;
+
+    link = document.querySelector('a[title="Subscriptions"]');
+    link.click();
+
+
+    console.log("SPA click subscriptions");
+}
+
 function handleLogoClick(event) {
     event.stopPropagation();
-    // Check if we are already on the subscriptions page
-    if (window.location.href === "https://www.youtube.com/feed/subscriptions") {
-        event.preventDefault();
-        console.log("Already on Subscriptions page — no redirect.");
-        return;
-    }
+    event.preventDefault();
+
+    // if (window.location.href === "https://www.youtube.com/feed/subscriptions") {
+    //     console.log("Already on Subscriptions page — no redirect.");
+    // }
+    // else{
+
+    navigateToSubscriptions();
+    // }
 }
 
 function configureLink(link) {
-    if (link.href !== "https://www.youtube.com/feed/subscriptions") {
-        link.addEventListener("click", handleLogoClick, true);
-        link.addEventListener("touchend", handleLogoClick, true);
-        link.href = "https://www.youtube.com/feed/subscriptions";
-    }
+    // if (link.href !== "https://www.youtube.com/feed/subscriptions") {
+    link.addEventListener("click", handleLogoClick, true);
+    link.addEventListener("touchend", handleLogoClick, true);
+    // link.href = "https://www.youtube.com/feed/subscriptions";
 }
 
 function configurePageLinks() {
