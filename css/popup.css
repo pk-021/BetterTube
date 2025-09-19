@@ -1,0 +1,97 @@
+/* General popup container */
+#popup {
+  width: 320px;
+  padding: 15px 20px;
+  font-family: Arial, sans-serif;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Top line: logo, settings, dark mode */
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.logo img {
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+}
+
+/* Website name heading (optional) */
+.website_name {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: normal;
+  margin: 0;
+}
+
+/* Settings and dark mode buttons */
+.settings,
+.dark {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.settings img,
+.dark img {
+  display: block;
+}
+
+/* Bookmarks container */
+.bookmarks {
+  margin-top: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+/* Lists container */
+.lists {
+  margin-top: 15px;
+}
+
+.lists h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+/* Folders inside lists */
+.folders {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Scrollbar styling for bookmarks and folders (optional) */
+.bookmarks::-webkit-scrollbar,
+.folders::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bookmarks::-webkit-scrollbar-thumb,
+.folders::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.bookmarks::-webkit-scrollbar-track,
+.folders::-webkit-scrollbar-track {
+  background-color: transparent;
+}

@@ -1,0 +1,33 @@
+/* --- Ads & Skeleton --- */
+div#home-page-skeleton,
+
+/* HIDE THE FOLLOWING */
+
+/* Shorts Button on Sidebar*/
+html[hide_shorts=true] .yt-simple-endpoint[title=Shorts],
+
+/* Regular-list shorts search results */
+html[hide_shorts=true] ytd-video-renderer:has(a[href*="/shorts/"]),
+
+/* Grid shorts search results */
+html[hide_shorts=true] .ytGridShelfViewModelHost:has(.shortsLockupViewModelHost),
+
+/* homepage shorts grid */
+html[hide_shorts=true] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])
+
+/* html[hide_shorts=true] ytd-rich-grid-renderer[is-shorts-grid] */
+/* html[hide_shorts=true] yt-tab-shape[tab-title=Shorts], */
+/* html[hide_shorts=true] #player-shorts-container, */
+/* html[hide_shorts=true] .ytd-shorts, */
+/* html[hide_shorts=true] yt-chip-cloud-chip-renderer:has(yt-formatted-string[title=Shorts]), */
+/* html[hide_shorts=true] ytd-compact-video-renderer:has(a[href*="/shorts/"]), */
+/* html[hide_shorts=true] ytd-notification-renderer:has(>a[href^="/shorts/"]), */
+/* html[hide_shorts=true] ytd-reel-shelf-renderer, */
+/* html[hide_shorts=true] ytd-rich-item-renderer:has(a[href*="/shorts/"]), */
+/* html[hide_shorts=true] ytd-rich-shelf-renderer[is-shorts], */
+/* html[hide_shorts=true] ytm-reel-shelf-renderer, */
+/* html[hide_shorts=true] ytm-rich-grid-renderer.is_shorts, */
+/* html[hide_shorts=true] ytm-video-with-context-renderer:has(a[href*="/shorts/"]) */
+{
+    display:none !important;
+}

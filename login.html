@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Unlock Extension</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="card-container">
+      <!-- Setup password form -->
+      <div id="setup-container" style="display: none;">
+        <h3>Set Password</h3>
+        <input type="password" id="new-password" placeholder="Enter password" />
+        <input type="password" id="confirm-password" placeholder="Confirm password" />
+        <button id="save-password" class="btn-success">Save Password</button>
+        <p id="setup-error" class="text-danger" style="display: none;">Passwords do not match!</p>
+      </div>
+
+      <!-- Login form -->
+      <div id="login-container" style="display: none;">
+        <h3>Enter Password</h3>
+        <input type="password" id="password-input" placeholder="Password" />
+        <button id="submit-password" class="btn-primary">Unlock</button>
+        <button id="forgot-password" class="forgot-btn">Forgot Password?</button>
+        <p id="error-message" class="text-danger" style="display: none;">Incorrect password!</p>
+      </div>
+
+      <!-- Password reset form -->
+      <div id="reset-container" style="display: none;">
+        <h3>Reset Password</h3>
+        <p>Type the following word:</p>
+        <div id="current-word" class="current-word"></div>
+        <input type="text" id="reset-input" placeholder="Type the word here" />
+        <button id="reset-next" class="btn-warning">Next</button>
+      </div>
+    </div>
+
+    <script src="password.js"></script>
+  </body>
+</html>

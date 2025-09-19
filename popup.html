@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Element Modifier</title>
+  <link rel="stylesheet" href="css/popup.css" />
+  <script src="js/popup.js"></script>
+</head>
+
+<body>
+  <div id="popup">
+    <div class="line">
+      <div class="logo">
+        <img src="assets/logo_v2.png" alt="logo" />BTube
+      </div>
+      <h3 class="website_name"></h3>
+
+      <!-- Settings button -->
+      <div class="settings" id="settingsButton"
+        style="cursor:pointer; display:flex; align-items:center; margin-left:10px;">
+        <img src="assets/settings.svg" alt="settings" style="width:30px; height:30px;" />
+      </div>
+
+      <!-- Dark mode toggle -->
+      <div class="dark" id="darkModeToggle" style="display:flex; align-items:center; margin-left:10px;">
+        <img src="assets/dark-theme.svg" alt="dark-theme" style="width:24px; height:24px;" />
+      </div>
+    </div>
+
+    <div class="bookmarks" id="bookmarks"></div>
+
+    <div class="lists">
+      <h3>Folders</h3>
+      <div class="folders"></div>
+    </div>
+  </div>
+
+  <script type="module" src="notes.js"></script>
+</body>
+
+</html>
