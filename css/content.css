@@ -13,7 +13,14 @@ html[hide_shorts=true] ytd-video-renderer:has(a[href*="/shorts/"]),
 html[hide_shorts=true] .ytGridShelfViewModelHost:has(.shortsLockupViewModelHost),
 
 /* homepage shorts grid */
-html[hide_shorts=true] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts])
+html[hide_shorts=true] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
+
+
+/* Guide-style shorts on recommnedations panels of video */
+html[hide_shorts=true] ytm-reel-shelf-renderer,
+html[hide_shorts=true] ytd-reel-shelf-renderer,
+
+
 
 /* html[hide_shorts=true] ytd-rich-grid-renderer[is-shorts-grid] */
 /* html[hide_shorts=true] yt-tab-shape[tab-title=Shorts], */
@@ -22,12 +29,37 @@ html[hide_shorts=true] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-
 /* html[hide_shorts=true] yt-chip-cloud-chip-renderer:has(yt-formatted-string[title=Shorts]), */
 /* html[hide_shorts=true] ytd-compact-video-renderer:has(a[href*="/shorts/"]), */
 /* html[hide_shorts=true] ytd-notification-renderer:has(>a[href^="/shorts/"]), */
-/* html[hide_shorts=true] ytd-reel-shelf-renderer, */
 /* html[hide_shorts=true] ytd-rich-item-renderer:has(a[href*="/shorts/"]), */
 /* html[hide_shorts=true] ytd-rich-shelf-renderer[is-shorts], */
-/* html[hide_shorts=true] ytm-reel-shelf-renderer, */
 /* html[hide_shorts=true] ytm-rich-grid-renderer.is_shorts, */
 /* html[hide_shorts=true] ytm-video-with-context-renderer:has(a[href*="/shorts/"]) */
+
+
+/* homepage better contents */
+html[is_home=true] ytd-rich-grid-renderer 
 {
     display:none !important;
 }
+
+
+html[is_home = true] #center:has(yt-searchbox){
+    position:fixed;
+    top:50vh;
+    left:50vw;
+    transform: translate(-50%,-50%);
+    width: 45%;
+    /* display: none; */
+}
+
+.homeCenterLogo{
+    display: none;
+}
+html[is_home = true] .homeCenterLogo{
+    display:block;
+    position: absolute;
+    top:-40px;
+    left:50%;
+    transform: translate(-50%,-100%);
+    height: 8rem;
+}
+

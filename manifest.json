@@ -32,7 +32,8 @@
         "assets/bookmark.png",
         "assets/play.png",
         "assets/delete.png",
-        "assets/save.png"
+        "assets/save.png",
+        "assets/ytlogo.png"
       ],
       "matches": ["https://*.youtube.com/*"]
     }

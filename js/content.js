@@ -42,17 +42,23 @@ chrome.storage.onChanged.addListener(changes => {
 
 
 
+let homeCenterLogo = document.createElement("img");
+homeCenterLogo.src = chrome.runtime.getURL("assets/ytlogo.png");
+homeCenterLogo.alt = "YTlogo";
+homeCenterLogo.className = "homeCenterLogo";
+
 
 // =======================
 // Redirect Logic
 // =======================
+
+
 function update_is_home_attrb() {
     const url = window.location.href;
-    if (
-        settingCache.redirect_home &&
-        /^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)
-    ) {
+    if (/^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)) {
         document.documentElement.setAttribute("is_home", true);
+        searchbar = document.querySelector("#center");
+        searchbar.append(homeCenterLogo);
     }
     else {
         document.documentElement.setAttribute("is_home", false)
@@ -81,20 +87,15 @@ function handleLogoClick(event) {
     event.stopPropagation();
     event.preventDefault();
 
-    // if (window.location.href === "https://www.youtube.com/feed/subscriptions") {
-    //     console.log("Already on Subscriptions page — no redirect.");
-    // }
-    // else{
+
 
     navigateToSubscriptions();
-    // }
+
 }
 
 function configureLink(link) {
-    // if (link.href !== "https://www.youtube.com/feed/subscriptions") {
     link.addEventListener("click", handleLogoClick, true);
     link.addEventListener("touchend", handleLogoClick, true);
-    // link.href = "https://www.youtube.com/feed/subscriptions";
 }
 
 function configurePageLinks() {
@@ -111,6 +112,7 @@ function configurePageLinks() {
             } else {
                 flags.redirectAttached = false;
                 observer.disconnect();
+                console.log("Not redirecting")
             }
 
             // Observe changes to the logo for SPA updates
@@ -161,12 +163,12 @@ new MutationObserver((mutations) => {
 // SPA Event Handling
 // =======================
 function update(arg) {
-    update_is_home_attrb();
 
     switch (arg) {
         case 1: // initial load
             console.log("Initial load complete");
             if (settingCache.redirect_home) { configurePageLinks() };
+            update_is_home_attrb();
             applyAttributes(settingCache);
             break;
 
@@ -181,6 +183,7 @@ function update(arg) {
         case 4: // navigation finish
             console.log("Navigation finished");
             if (settingCache.redirect_home) { configurePageLinks() };
+            update_is_home_attrb();
             break;
 
         default: // yt-page-data-updated

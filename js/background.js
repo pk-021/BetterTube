@@ -7,7 +7,7 @@ const defaultSettings = {
   hide_feed: true,
   hide_related: true,
   hide_comments: true,
-  redirect_home: true,
+  redirect_home: false,
   hide_trending: true,
   hide_shorts: true,
   BTubeOn: true,
@@ -36,6 +36,10 @@ function setSettings(data) {
   });
 }
 
+
+// TO BE REMOVED: LOAD DEFAULT SETTINGS EVERY TIME
+setSettings(defaultSettings);
+
 // Initialize settings
 getSettings((existing) => {
   if (!Object.keys(existing).length) {
@@ -54,33 +58,8 @@ function updateCurrentSettings() {
     currentSettings = settings;
   });
 }
+
+
 updateCurrentSettings();
 
-
-console.log("Service worker is working")
-
-
-// // Redirect handling
-// chrome.webRequest.onBeforeRequest.addListener(
-//   ({ url, tabId }) => {
-//     if (!currentSettings.BTubeOn) return;
-
-//     if (
-//       (currentSettings.hide_trending && /\/feed\/(trending|explore)/.test(url)) ||
-//       (currentSettings.hide_shorts && /\/shorts\//.test(url))
-//     ) {
-//       const redirectUrl = currentSettings.redirect_home
-//         ? "https://www.youtube.com/feed/subscriptions"
-//         : "https://www.youtube.com";
-//       chrome.tabs.update(tabId, { url: redirectUrl });
-//     }
-
-//     if (
-//       currentSettings.hide_redirect_home &&
-//       /^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)
-//     ) {
-//       chrome.tabs.update(tabId, { url: "https://www.youtube.com/feed/subscriptions" });
-//     }
-//   }
-// );
-
+console.log("Service worker is working.")
