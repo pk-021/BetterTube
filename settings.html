@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/popup.css" />
+  
+  <!-- Scripts (non-module scripts can go here) -->
+  <script src="js/popup.js" defer></script>
+  <script src="js/bookmarks.js" defer></script>
+</head>
+<body>
+  <div id="popup">
+    <div class="line">
+      <!-- Logo -->
+      <div class="logo">
+        <img src="assets/logo_v2.png" alt="logo" />BTube
+      </div>
+
+      <!-- Settings section -->
+      <div class="controls">
+        <div class="dark" id="darkModeToggle">
+          <img src="assets/dark-theme.svg" alt="dark-theme" />
+        </div>
+        <a href="login.html" id="settingsButton" class="settings">
+          <img src="assets/settings.svg" alt="settings" />
+        </a>
+      </div>
+    </div>
+
+    <!-- folder -->
+    <div class="lists">
+      <h2 class="folder-heading">Folders</h2>
+      <div class="folder"></div>
+    </div>
+  </div>
+
+  <script type="module" src="notes.js"></script>
+</body>
+</html>

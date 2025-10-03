@@ -12,7 +12,7 @@ const defaultSettings = {
   hide_shorts: true,
   BTubeOn: true,
   popup_states: {
-    dark_mode: false,
+    dark_mode: true,
     logged_in: false,
     first_login: true,
   },
@@ -62,4 +62,4 @@ function updateCurrentSettings() {
 
 updateCurrentSettings();
 
-console.log("Service worker is working.")
+console.log("Service worker is working")

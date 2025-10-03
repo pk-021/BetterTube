@@ -36,30 +36,36 @@ html[hide_shorts=true] ytd-reel-shelf-renderer,
 
 
 /* homepage better contents */
-html[is_home=true] ytd-rich-grid-renderer 
-{
-    display:none !important;
+html[is_home=true] ytd-rich-grid-renderer {
+    display: none !important;
 }
 
 
-html[is_home = true] #center:has(yt-searchbox){
-    position:fixed;
-    top:50vh;
-    left:50vw;
-    transform: translate(-50%,-50%);
+html[is_home=true] #center:has(yt-searchbox) {
+    position: fixed;
+    top: 50vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
     width: 45%;
     /* display: none; */
 }
 
-.homeCenterLogo{
+.homeCenterLogo {
     display: none;
 }
-html[is_home = true] .homeCenterLogo{
-    display:block;
+
+
+html[is_home=true] .homeCenterLogo {
+    display: block;
     position: absolute;
-    top:-40px;
-    left:50%;
-    transform: translate(-50%,-100%);
+    top: -40px;
+    left: 50%;
+    transform: translate(-50%, -100%);
     height: 8rem;
 }
 
+
+/* Bookmark button */
+.bookmark-btn {
+    overflow:visible !important;
+}

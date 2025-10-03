@@ -1,27 +1,49 @@
-/* General popup container */
-#popup {
-  width: 320px;
-  padding: 15px 20px;
-  font-family: Arial, sans-serif;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+:root {
+  --bg: #ffffff;
+  --text: #222222;
+  --muted: #555555;
+  --surface: #f8f8f8;
+  --hover: rgba(0, 0, 0, 0.05);
+  --primary: #ff0000;
+  --radius: 12px;
 }
 
-/* Top line: logo, settings, dark mode */
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+  height: 450px;
+  width: 320px;
+}
+
+#popup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+/* Folder headings */
+.folder-heading { padding-left: 10px; }
+.folder-title { padding-left: 10px; }
+
+/* Top line */
 .line {
+  padding: 6px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 15px;
+  position: relative;
 }
 
-/* Logo */
 .logo {
   display: flex;
   align-items: center;
-  font-weight: bold;
-  font-size: 1.2rem;
+  font-weight: 700;
+  font-size: 1.12rem;
+  color: var(--text);
+  z-index: 2;
 }
 
 .logo img {
@@ -30,68 +52,188 @@
   margin-right: 8px;
 }
 
-/* Website name heading (optional) */
-.website_name {
-  flex-grow: 1;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: normal;
-  margin: 0;
+/* Controls */
+.controls {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  gap: 8px;
 }
 
-/* Settings and dark mode buttons */
+#settingsButton,
 .settings,
 .dark {
   display: flex;
   align-items: center;
   cursor: pointer;
+  padding: 6px;
+  border-radius: 18px;
 }
 
-.settings img,
+#settingsButton img,
 .dark img {
-  display: block;
-}
-
-/* Bookmarks container */
-.bookmarks {
-  margin-top: 10px;
-  max-height: 200px;
-  overflow-y: auto;
-  border-top: 1px solid #eee;
-  padding-top: 10px;
+  width: 26px;
+  height: 26px;
 }
 
 /* Lists container */
 .lists {
-  margin-top: 15px;
+  min-height: 200px;
 }
 
-.lists h3 {
-  font-size: 1rem;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-
-/* Folders inside lists */
-.folders {
+/* Folder list */
+.folder {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
-/* Scrollbar styling for bookmarks and folders (optional) */
-.bookmarks::-webkit-scrollbar,
-.folders::-webkit-scrollbar {
-  width: 6px;
+/* Folder block */
+.fold {
+  background-color: var(--surface);
+  padding: 8px 0;
+  transition: background-color 0.2s ease;
 }
 
-.bookmarks::-webkit-scrollbar-thumb,
-.folders::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
+.fold:hover {
+  background-color: var(--hover);
+}
+
+/* Folder header */
+.head {
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.05rem;
+  position: relative;
+  margin-bottom: 10px;
+  padding: 0 8px;
+}
+
+/* Right-side group (chevron + delete) */
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chevron {
+  width: 14px;
+  height: 14px;
+  background: url("../assets/arrow.svg") no-repeat center center;
+  background-size: contain;
+  transition: transform 0.2s ease;
+  transform: rotate(0deg); 
+}
+
+/* When header has .open (expanded), show chevron at 0deg */
+.head.collapsed .chevron {
+  transform: rotate(-90deg); /* <-- expanded: 0deg */
+}
+
+/* delete button (hidden by default) */
+.delete-folder {
+  width: 16px;
+  height: 16px;
+  background: url("../assets/delete.svg") no-repeat center center;
+  background-size: contain;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* reveal delete on header hover */
+.head:hover .delete-folder {
+  opacity: 0.8;
+  pointer-events: auto;
+}
+
+.delete-folder:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Content collapse */
+.content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.content.open {
+  max-height: 500px;
+  opacity: 1;
+}
+
+/* Bookmark block */
+.bookmark {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--hover);
+}
+
+.bookmark:hover {
+  background-color: var(--hover);
+  cursor: pointer;
+}
+
+.bookmark:last-child {
+  border-bottom: none;
+}
+
+.bookmark-link {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 500;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/* Right side meta */
+.bookmark-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px;
+}
+
+.timestamp {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.delete-bookmark {
+  color: #cb3a3a;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.delete-bookmark:hover {
+  background-color: rgba(203, 58, 58, 0.25);
+  transform: scale(1.1);
+}
+
+/* Empty state */
+.no-bookmarks {
+  text-align: center;
+  font-style: italic;
+  color: var(--muted);
+  padding: 8px;
+}
+
+/* Scrollbars */
+.folder::-webkit-scrollbar { width: 6px; }
+.folder::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.25);
   border-radius: 3px;
 }
-
-.bookmarks::-webkit-scrollbar-track,
-.folders::-webkit-scrollbar-track {
-  background-color: transparent;
-}
+.folder::-webkit-scrollbar-track { background-color: transparent; }
