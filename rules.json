@@ -1,27 +1,3 @@
 [
-  {
-    "id": 1,
-    "priority": 1,
-    "action": {
-      "type": "redirect",
-      "redirect": { "url": "https://www.youtube.com/feed/subscriptions" }
-    },
-    "condition": {
-      "urlFilter": "youtube.com/feed/trending",
-      "resourceTypes": ["main_frame"]
-    }
-  },
-  
-  {
-    "id": 2,
-    "priority": 1,
-    "action": {
-      "type": "redirect",
-      "redirect": { "url": "https://www.youtube.com/feed/subscriptions" }
-    },
-    "condition": {
-      "urlFilter": "youtube.com/shorts",
-      "resourceTypes": ["main_frame"]
-    }
-  }
+
 ]

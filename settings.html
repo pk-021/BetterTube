@@ -2,42 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/popup.css" />
-  
-  <!-- Scripts (non-module scripts can go here) -->
-  <script src="js/popup.js" defer></script>
-  <script src="js/bookmarks.js" defer></script>
+  <title>Extension Settings</title>
+  <link rel="stylesheet" href="css/settings.css" />
 </head>
 <body>
-  <div id="popup">
-    <div class="line">
-      <!-- Logo -->
-      <div class="logo">
-        <img src="assets/logo_v2.png" alt="logo" />BTube
-      </div>
+  <div class="settings-container">
+    <h2>Extension Settings</h2>
 
-      <!-- Settings section -->
-      <div class="controls">
-        <div class="dark" id="darkModeToggle">
-          <img src="assets/dark-theme.svg" alt="dark-theme" />
-        </div>
-        <a href="login.html" id="settingsButton" class="settings">
-          <img src="assets/settings.svg" alt="settings" />
-        </a>
-      </div>
+    <!-- Toggle 0: Extension online -->
+    <div class="setting-item">
+      <label for="extension-online">Extension online</label>
+      <label class="switch">
+        <input type="checkbox" id="extension-online" />
+        <span class="slider"></span>
+      </label>
     </div>
 
-    <!-- folder -->
-    <div class="lists">
-      <h2 class="folder-heading">Folders</h2>
-      <div class="folder"></div>
+
+    <!-- Toggle 1: Redirect to subscriptions -->
+    <div class="setting-item">
+      <label for="redirect-subscriptions">Redirect to Subscriptions</label>
+      <label class="switch">
+        <input type="checkbox" id="redirect-subscriptions" />
+        <span class="slider"></span>
+      </label>
     </div>
+
+    <!-- Toggle 2: Disable Shorts -->
+    <div class="setting-item">
+      <label for="disable-shorts">Disable Shorts</label>
+      <label class="switch">
+        <input type="checkbox" id="disable-shorts" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Toggle 3: Minimal Homepage -->
+    <div class="setting-item">
+      <label for="minimal-homepage">Minimal Homepage</label>
+      <label class="switch">
+        <input type="checkbox" id="minimal-homepage" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+
+
   </div>
 
-  <script type="module" src="notes.js"></script>
+  <script src="js/settings.js"></script>
 </body>
 </html>

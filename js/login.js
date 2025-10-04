@@ -1,20 +1,21 @@
+// --- Containers ---
 const loginContainer = document.getElementById("login-container");
 const setupContainer = document.getElementById("setup-container");
 const resetContainer = document.getElementById("reset-container");
 
-// --- LOGIN FORM ELEMENTS ---
+// --- Login elements ---
 const input = document.getElementById("password-input");
 const button = document.getElementById("submit-password");
 const error = document.getElementById("error-message");
 const forgotButton = document.getElementById("forgot-password");
 
-// --- SETUP FORM ELEMENTS ---
+// --- Setup elements ---
 const newPasswordInput = document.getElementById("new-password");
 const confirmPasswordInput = document.getElementById("confirm-password");
 const saveButton = document.getElementById("save-password");
 const setupError = document.getElementById("setup-error");
 
-// --- RESET FORM ELEMENTS ---
+// --- Reset elements ---
 const currentWordEl = document.getElementById("current-word");
 const resetInput = document.getElementById("reset-input");
 const resetNextBtn = document.getElementById("reset-next");
@@ -26,79 +27,104 @@ const resetWords = [
 ];
 let currentResetIndex = 0;
 
-// Step 1: Check if password exists
-chrome.storage.local.get("extensionPassword", (data) => {
-  if (data.extensionPassword) {
-    loginContainer.style.display = "block";
-  } else {
-    setupContainer.style.display = "block";
-  }
-});
+// --- Helper to show/hide containers ---
+function showContainer(container) {
+  [loginContainer, setupContainer, resetContainer].forEach(c => c.classList.add("hidden"));
+  container.classList.remove("hidden");
+}
 
-// Step 2: Handle password setup
-saveButton?.addEventListener("click", () => {
-  const newPass = newPasswordInput.value;
-  const confirmPass = confirmPasswordInput.value;
-
-  if (newPass && newPass === confirmPass) {
-    chrome.storage.local.set({ extensionPassword: newPass }, () => {
-      setupContainer.style.display = "none";
-      loginContainer.style.display = "block";
-      alert("Password set successfully! Please log in.");
+// --- Promisify chrome.storage.local.get ---
+function getPassword() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get("extensionPassword", (data) => {
+      resolve(data.extensionPassword);
     });
-  } else {
-    setupError.style.display = "block";
-  }
-});
+  });
+}
 
-// Step 3: Handle login
-button?.addEventListener("click", checkPassword);
-input?.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") checkPassword();
-});
-
-function checkPassword() {
-  const enteredPass = input.value;
-  chrome.storage.local.get("extensionPassword", (data) => {
-    if (enteredPass === data.extensionPassword) {
-      window.location.href = "popup.html";
+// --- Get dark mode preference ---
+function applyDarkMode() {
+  chrome.storage.local.get("darkModeEnabled", (data) => {
+    if (data.darkModeEnabled) {
+      document.documentElement.setAttribute("dark_mode", "true");
     } else {
-      error.style.display = "block";
-      input.value = "";
+      document.documentElement.removeAttribute("dark_mode");
     }
   });
 }
 
-// Step 4: Forgot password
-forgotButton?.addEventListener("click", () => {
-  loginContainer.style.display = "none";
-  resetContainer.style.display = "block";
+// --- Initialize page ---
+async function init() {
+  applyDarkMode(); // Apply dark mode on load
+
+  const password = await getPassword();
+  if (password) {
+    showContainer(loginContainer);
+  } else {
+    showContainer(setupContainer);
+  }
+}
+
+// --- Setup password ---
+saveButton.addEventListener("click", async () => {
+  const newPass = newPasswordInput.value.trim();
+  const confirmPass = confirmPasswordInput.value.trim();
+
+  if (newPass && newPass === confirmPass) {
+    await chrome.storage.local.set({ extensionPassword: newPass });
+    alert("Password set successfully! Please log in.");
+    showContainer(loginContainer);
+    setupError.classList.add("hidden");
+  } else {
+    setupError.classList.remove("hidden");
+  }
+});
+
+// --- Check login ---
+async function checkPassword() {
+  const enteredPass = input.value.trim();
+  const password = await getPassword();
+
+  if (enteredPass === password) {
+    window.location.href = "settings.html";
+  } else {
+    error.classList.remove("hidden");
+    input.value = "";
+  }
+}
+
+button.addEventListener("click", checkPassword);
+input.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") checkPassword();
+});
+
+// --- Forgot password ---
+forgotButton.addEventListener("click", () => {
   currentResetIndex = 0;
   resetInput.value = "";
   showCurrentWord();
+  showContainer(resetContainer);
 });
 
-// Display the current word
+// --- Show current word ---
 function showCurrentWord() {
   currentWordEl.textContent = resetWords[currentResetIndex];
 }
 
-// Handle next word
-resetNextBtn.addEventListener("click", () => {
+// --- Handle reset next ---
+resetNextBtn.addEventListener("click", async () => {
   const userWord = resetInput.value.trim();
+
   if (userWord === resetWords[currentResetIndex]) {
     currentResetIndex++;
     resetInput.value = "";
 
     if (currentResetIndex >= resetWords.length) {
-      // Completed reset
-      chrome.storage.local.remove("extensionPassword", () => {
-        alert("Password reset successful! Please set a new password.");
-        resetContainer.style.display = "none";
-        setupContainer.style.display = "block";
-      });
+      await chrome.storage.local.remove("extensionPassword");
+      alert("Password reset successful! Please set a new password.");
+      showContainer(setupContainer);
     } else {
-      showCurrentWord(); // Show next word
+      showCurrentWord();
     }
   } else {
     alert("Incorrect word! Start over.");
@@ -106,4 +132,11 @@ resetNextBtn.addEventListener("click", () => {
     resetInput.value = "";
     showCurrentWord();
   }
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+  init();
+  setTimeout(() => {
+    document.body.setAttribute("data-loaded", "true");
+  }, 50); // 50ms is usually enough
 });

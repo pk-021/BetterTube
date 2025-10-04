@@ -1,6 +1,30 @@
-window.onload = () => {
-    renderBookmarksFromStorage();
-};
+// --- Dark Mode Toggle ---
+const darkModeToggle = document.getElementById("darkModeToggle");
+
+// Load dark mode state on popup open
+chrome.storage.local.get("darkModeEnabled", (result) => {
+    if (result.darkModeEnabled) {
+        document.documentElement.setAttribute("dark_mode", "true");
+    } else {
+        document.documentElement.removeAttribute("dark_mode");
+    }
+});
+
+// Toggle dark mode on click
+darkModeToggle.addEventListener("click", () => {
+    const isDark = document.documentElement.hasAttribute("dark_mode");
+
+    if (isDark) {
+        document.documentElement.removeAttribute("dark_mode");
+    } else {
+        document.documentElement.setAttribute("dark_mode", "true");
+    }
+
+    // Save preference
+    chrome.storage.local.set({ darkModeEnabled: !isDark });
+});
+
+
 
 // Fetch bookmarks from storage
 function renderBookmarksFromStorage() {
@@ -154,3 +178,13 @@ function closePopup() {
     popup.classList.add("closing");
     popup.addEventListener("animationend", () => popup.remove(), { once: true });
 }
+
+
+
+window.addEventListener("DOMContentLoaded", () => {
+    renderBookmarksFromStorage();
+    // Short delay to allow initial paint
+    setTimeout(() => {
+        document.body.setAttribute("data-loaded", "true");
+    }, 50); // 50ms is usually enough
+});

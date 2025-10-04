@@ -3,9 +3,6 @@
 // =======================
 let storage = chrome.storage.local;
 
-const flags = {
-    redirectAttached: false,
-};
 
 let settingCache = {};
 
@@ -26,39 +23,41 @@ function getSettings(callback, keys = null) {
 function updateCurrentSettings() {
     getSettings(settings => {
         settingCache = settings;
-        console.log("Settings loaded:", settingCache);
+        console.log("updated settings:", settings);
+        applyAttributes(settings);
+
+        chrome.runtime.sendMessage({ type: "toggleRedirects", enabled: settings.redirect_home });
+        if (settings.redirect_home) {
+            const url = window.location.href;
+            if (/^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)) {
+                navigateToSubscriptions();
+            }
+        }
     });
 }
 
 // Load settings on script start
 updateCurrentSettings();
-
-
 //monitor changes to settings in local storage
 chrome.storage.onChanged.addListener(changes => {
     updateCurrentSettings();
-    applyAttributes(settingCache);
 })
 
 
-
+//minimalist homepage
 let homeCenterLogo = document.createElement("img");
 homeCenterLogo.src = chrome.runtime.getURL("assets/ytlogo.png");
 homeCenterLogo.alt = "YTlogo";
 homeCenterLogo.className = "homeCenterLogo";
 
-
-// =======================
-// Redirect Logic
-// =======================
-
-
-function update_is_home_attrb() {
+function update_home_props() {
     const url = window.location.href;
     if (/^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)) {
         document.documentElement.setAttribute("is_home", true);
-        searchbar = document.querySelector("#center");
-        searchbar.append(homeCenterLogo);
+        if (settingCache.minimal_homepage) {
+            searchbar = document.querySelector("#center");
+            searchbar.append(homeCenterLogo);
+        }
     }
     else {
         document.documentElement.setAttribute("is_home", false)
@@ -66,74 +65,40 @@ function update_is_home_attrb() {
 }
 
 // =======================
-// Logo Link Handling
+// redirect homepage
 // =======================
 
 function navigateToSubscriptions() {
     const url = "/feed/subscriptions"; // relative URL
 
-
     // If already on subscriptions, do nothing
     if (window.location.pathname === url) return;
-
     link = document.querySelector('a[title="Subscriptions"]');
     link.click();
-
-
-    console.log("SPA click subscriptions");
 }
 
 function handleLogoClick(event) {
+
+    if (!settingCache.redirect_home) {
+        return;
+    }
     event.stopPropagation();
     event.preventDefault();
-
-
-
+    console.log("Tasks complete!");
     navigateToSubscriptions();
-
 }
 
-function configureLink(link) {
-    link.addEventListener("click", handleLogoClick, true);
-    link.addEventListener("touchend", handleLogoClick, true);
-}
-
-function configurePageLinks() {
-    if (flags.redirectAttached) return;
-
-    const configureLogo = () => {
-        const logo = document.querySelector("a#logo");
-        if (logo) {
-
-            //Configuration on page load
-            if (settingCache.redirect_home) {
-                configureLink(logo);
-                console.log("Logo found and configured!")
-            } else {
-                flags.redirectAttached = false;
-                observer.disconnect();
-                console.log("Not redirecting")
-            }
-
-            // Observe changes to the logo for SPA updates
-            const observer = new MutationObserver(() => {
-                if (settingCache.redirect_home) {
-                    configureLink(logo);
-                } else {
-                    flags.redirectAttached = false;
-                    observer.disconnect();
-                }
-            });
-
-            observer.observe(logo, { attributes: true, attributeFilter: ["href"] });
-            flags.redirectAttached = true;
-        } else {
-            // Retry if logo not yet in DOM
-            setTimeout(configureLogo, 100);
-        }
-    };
-    configureLogo();
-}
+function configureLogo() {
+    const logo = document.querySelector("a#logo");
+    if (logo) {
+        logo.addEventListener("click", handleLogoClick, true);
+        logo.addEventListener("touchend", handleLogoClick, true);
+        console.log("Logo found and configured!")
+    }
+    else {
+        setTimeout(configureLogo, 100);
+    }
+};
 
 
 
@@ -141,7 +106,7 @@ function configurePageLinks() {
 function applyAttributes(settings) {
     console.log("attributes should be applied!")
     Object.keys(settings).forEach(key => {
-        if (key.includes("hide") || key === "BTubeOn") {
+        if (key.includes("hide") || key === "BTubeOn" || key === "minimal_homepage" || key === "redirect_home") {
             document.documentElement.setAttribute(key, settings[key]);
         }
     });
@@ -151,9 +116,8 @@ function applyAttributes(settings) {
 new MutationObserver((mutations) => {
     mutations.forEach(mutation => {
         const attr = mutation.attributeName;
-        if (attr.startsWith("hide_") || attr === "BTubeOn") {
-
-            console.log("attribute change:", attr);
+        if (attr === "redirect_home") {
+            configureLogo();
         }
     });
 }).observe(document.documentElement, { attributes: true });
@@ -169,9 +133,8 @@ function update(arg) {
     switch (arg) {
         case 1: // initial load
             console.log("Initial load complete");
-
-            if (settingCache.redirect_home) { configurePageLinks() };
-            update_is_home_attrb();
+            configureLogo();
+            update_home_props();
             applyAttributes(settingCache);
             loadBookmarkButton();
             break;
@@ -186,9 +149,8 @@ function update(arg) {
 
         case 4: // navigation finish
             console.log("Navigation finished");
-
-            if (settingCache.redirect_home) { configurePageLinks() };
-            update_is_home_attrb();
+            configureLogo();
+            update_home_props();
             loadBookmarkButton();
             break;
 
@@ -210,11 +172,17 @@ window.addEventListener("yt-page-data-updated", update);
 
 
 
-
+function isVideoPage() {
+    const url = window.location.href;
+    const videoEl = document.querySelector("video");
+    return (
+        /^https:\/\/(www\.)?youtube\.com\/watch\?v=[^&]+/.test(url) &&
+        !!videoEl
+    );
+}
 
 let loadBookmarkButton = () => {
-
-    if (!document.querySelector("ytd-watch-flexy")) {
+    if (!isVideoPage()) {
         return;
     }
 

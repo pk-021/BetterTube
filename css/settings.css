@@ -1,0 +1,166 @@
+/* --- Global Styles & Body --- */
+body {
+    user-select: none;
+    width: 350px;
+    height: 450px;
+    font-family: 'Roboto', Arial, sans-serif;
+    background: #fff;
+    color: #030303;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* --- Main Settings Card --- */
+.settings-container {
+    background: #fff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* --- Header Styling --- */
+h2 {
+    text-align: left;
+    margin: 20px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #030303;
+}
+
+/* --- Individual Setting Row --- */
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    cursor: pointer;
+}
+
+.setting-item + .setting-item {
+    border-top: 1px solid #e0e0e0;
+}
+
+.setting-item label {
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #030303;
+}
+
+/* --- YouTube-Style Toggle Switch --- */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 20px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* --- Checked State Styling --- */
+input:checked + .slider {
+    background-color: #065FD4;
+}
+
+input:checked + .slider:before {
+    transform: translateX(16px);
+}
+
+/* --- Focus State for Accessibility --- */
+input:focus-visible + .slider {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #065FD4;
+}
+
+/* --- Hover Effects for Settings Rows --- */
+.setting-item:hover {
+    background-color: #f2f2f2;
+}
+
+/* --- Fixed Toggle Hover Scale --- */
+.setting-item .switch:hover .slider:before {
+    transform: scale(1.05) translateX(var(--checked-translate, 0));
+}
+
+input:checked + .slider:before {
+    --checked-translate: 16px;
+}
+
+/* --- Dark Mode --- */
+html[dark_mode="true"] body {
+    background: #1e1e1e;
+    color: #e0e0e0;
+}
+
+html[dark_mode="true"] .settings-container {
+    background: #1e1e1e;
+}
+
+html[dark_mode="true"] h2 {
+    color: #e0e0e0;
+}
+
+html[dark_mode="true"] .setting-item {
+    border-top: 1px solid #3a3a3a;
+}
+
+html[dark_mode="true"] .setting-item:hover {
+    background-color: #2a2a2a;
+}
+
+html[dark_mode="true"] .setting-item label {
+    color: #e0e0e0;
+}
+
+html[dark_mode="true"] .slider {
+    background-color: #555;
+}
+
+html[dark_mode="true"] input:checked + .slider {
+    background-color: #3ea6ff;
+}
+
+html[dark_mode="true"] .slider:before {
+    background-color: #fff;
+}
+
+/* --- Only apply slider transitions after page is loaded --- */
+ .slider {
+    transition: background-color 0.25s ease;
+}
+
+.slider:before {
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), background-color 0.25s ease;
+}
+
+
+/* --- Disable all transitions initially --- */
+body:not([data-loaded]) *,
+body:not([data-loaded]) {
+  transition: none !important;
+}

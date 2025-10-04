@@ -9,13 +9,15 @@
 }
 
 body {
+  user-select: none;
   margin: 0;
   padding: 0;
   background: var(--bg);
   color: var(--text);
   font-family: "Roboto", "Segoe UI", Arial, sans-serif;
   height: 450px;
-  width: 320px;
+  width: 350px;
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 #popup {
@@ -23,11 +25,19 @@ body {
   flex-direction: column;
   gap: 12px;
   box-sizing: border-box;
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 /* Folder headings */
-.folder-heading { padding-left: 10px; }
-.folder-title { padding-left: 10px; }
+.folder-heading {
+  padding-left: 10px;
+  transition: color 0.35s ease;
+}
+
+.folder-title {
+  padding-left: 10px;
+  transition: color 0.35s ease;
+}
 
 /* Top line */
 .line {
@@ -37,6 +47,7 @@ body {
   position: relative;
 }
 
+/* Logo */
 .logo {
   display: flex;
   align-items: center;
@@ -44,12 +55,14 @@ body {
   font-size: 1.12rem;
   color: var(--text);
   z-index: 2;
+  transition: color 0.35s ease;
 }
 
 .logo img {
   width: 32px;
   height: 32px;
   margin-right: 8px;
+  transition: filter 0.35s ease;
 }
 
 /* Controls */
@@ -68,12 +81,14 @@ body {
   cursor: pointer;
   padding: 6px;
   border-radius: 18px;
+  transition: background-color 0.35s ease;
 }
 
 #settingsButton img,
 .dark img {
   width: 26px;
   height: 26px;
+  transition: filter 0.35s ease;
 }
 
 /* Lists container */
@@ -92,7 +107,7 @@ body {
 .fold {
   background-color: var(--surface);
   padding: 8px 0;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.35s ease;
 }
 
 .fold:hover {
@@ -124,16 +139,15 @@ body {
   height: 14px;
   background: url("../assets/arrow.svg") no-repeat center center;
   background-size: contain;
-  transition: transform 0.2s ease;
-  transform: rotate(0deg); 
+  transition: transform 0.35s ease;
+  transform: rotate(0deg);
 }
 
-/* When header has .open (expanded), show chevron at 0deg */
 .head.collapsed .chevron {
-  transform: rotate(-90deg); /* <-- expanded: 0deg */
+  transform: rotate(-90deg);
 }
 
-/* delete button (hidden by default) */
+/* Delete button */
 .delete-folder {
   width: 16px;
   height: 16px;
@@ -142,10 +156,9 @@ body {
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-/* reveal delete on header hover */
 .head:hover .delete-folder {
   opacity: 0.8;
   pointer-events: auto;
@@ -161,7 +174,7 @@ body {
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: max-height 0.3s ease, opacity 0.3s ease;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
 }
 
 .content.open {
@@ -175,11 +188,13 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--hover);
+  background-color: var(--surface);
+  color: var(--text);
+  transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
 }
 
 .bookmark:hover {
   background-color: var(--hover);
-  cursor: pointer;
 }
 
 .bookmark:last-child {
@@ -192,6 +207,7 @@ body {
   font-weight: 500;
   padding-left: 20px;
   padding-right: 20px;
+  transition: color 0.35s ease;
 }
 
 /* Right side meta */
@@ -206,6 +222,7 @@ body {
 .timestamp {
   font-size: 0.85rem;
   color: var(--muted);
+  transition: color 0.35s ease;
 }
 
 .delete-bookmark {
@@ -214,7 +231,7 @@ body {
   cursor: pointer;
   padding: 3px 6px;
   border-radius: 4px;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.35s ease, transform 0.35s ease, color 0.35s ease;
 }
 
 .delete-bookmark:hover {
@@ -228,12 +245,90 @@ body {
   font-style: italic;
   color: var(--muted);
   padding: 8px;
+  transition: color 0.35s ease;
 }
 
 /* Scrollbars */
-.folder::-webkit-scrollbar { width: 6px; }
+.folder::-webkit-scrollbar {
+  width: 6px;
+}
+
 .folder::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.25);
   border-radius: 3px;
 }
-.folder::-webkit-scrollbar-track { background-color: transparent; }
+
+.folder::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* --- Dark Mode --- */
+html[dark_mode="true"] {
+  --bg: #181818;
+  --text: #f1f1f1;
+  --muted: #aaa;
+  --surface: #242424;
+  --hover: rgba(255, 255, 255, 0.08);
+  --primary: #ff0000;
+}
+
+html[dark_mode="true"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+html[dark_mode="true"] .logo {
+  color: var(--text);
+}
+
+html[dark_mode="true"] .fold {
+  background-color: var(--surface);
+}
+
+html[dark_mode="true"] .fold:hover {
+  background-color: var(--hover);
+}
+
+html[dark_mode="true"] .bookmark {
+  background-color: var(--surface);
+  color: var(--text);
+  border-bottom: 1px solid var(--hover);
+}
+
+html[dark_mode="true"] .bookmark:hover {
+  background-color: var(--hover);
+}
+
+html[dark_mode="true"] .bookmark-link {
+  color: var(--text);
+}
+
+html[dark_mode="true"] .timestamp,
+html[dark_mode="true"] .no-bookmarks {
+  color: var(--muted);
+}
+
+html[dark_mode="true"] .delete-bookmark {
+  color: #ff6666;
+}
+
+html[dark_mode="true"] .delete-bookmark:hover {
+  background-color: rgba(255, 102, 102, 0.25);
+}
+
+/* All images smooth transition */
+#popup img {
+  transition: filter 0.35s ease;
+}
+
+/* Dark mode icons */
+html[dark_mode="true"] #popup #darkModeToggle img,
+html[dark_mode="true"] #popup #settingsButton img {
+  filter: invert(1) brightness(1.2) contrast(1.2);
+}
+
+/* --- Disable all transitions initially --- */
+body:not([data-loaded]) *,
+body:not([data-loaded]) {
+  transition: none !important;
+}

@@ -1,65 +1,85 @@
 "use strict";
 
-let storage = chrome.storage.local;
-let keepAliveInterval;
+console.log("Service worker is running");
 
+// --- Default settings ---
 const defaultSettings = {
+  minimal_homepage: true,
   hide_feed: true,
-  hide_related: true,
-  hide_comments: true,
   redirect_home: false,
-  hide_trending: true,
   hide_shorts: true,
-  BTubeOn: true,
-  popup_states: {
-    dark_mode: true,
-    logged_in: false,
-    first_login: true,
-  },
+  BTubeOn: true
 };
 
-// Helper functions
-function getSettings(callback, keys = null) {
-  storage.get(keys, (result) => {
-    if (chrome.runtime.lastError) {
-      storage = chrome.storage.local;
-      storage.get(keys, (rslt) => callback(rslt));
-    } else {
-      callback(result);
-    }
-  });
-}
-
-function setSettings(data) {
-  storage.set(data, () => {
-    if (chrome.runtime.lastError) storage = chrome.storage.local, storage.set(data);
-  });
-}
-
-
-// TO BE REMOVED: LOAD DEFAULT SETTINGS EVERY TIME
-setSettings(defaultSettings);
-
-// Initialize settings
-getSettings((existing) => {
+// Initialize settings (set defaults if none exist)
+chrome.storage.local.get(null, (existing) => {
   if (!Object.keys(existing).length) {
-    setSettings(defaultSettings);
+    chrome.storage.local.set(defaultSettings);
   } else {
-    Object.keys(defaultSettings).forEach((key) => {
-      if (!(key in existing)) existing[key] = defaultSettings[key];
-    });
-    setSettings(existing);
+    const merged = { ...defaultSettings, ...existing };
+    chrome.storage.local.set(merged);
   }
 });
 
-let currentSettings = {};
-function updateCurrentSettings() {
-  getSettings((settings) => {
-    currentSettings = settings;
-  });
+// --- Redirect rules ---
+const subscriptionRedirectRules = [
+  {
+    id: 1,
+    priority: 1,
+    action: {
+      type: "redirect",
+      redirect: { url: "https://www.youtube.com/feed/subscriptions" }
+    },
+    condition: {
+      urlFilter: "youtube.com/feed/trending",
+      resourceTypes: ["main_frame"]
+    }
+  },
+  {
+    id: 2,
+    priority: 1,
+    action: {
+      type: "redirect",
+      redirect: { url: "https://www.youtube.com/feed/subscriptions" }
+    },
+    condition: {
+      urlFilter: "youtube.com/shorts",
+      resourceTypes: ["main_frame"]
+    }
+  },
+  {
+    id: 3,
+    priority: 1,
+    action: {
+      type: "redirect",
+      redirect: { url: "https://www.youtube.com/feed/subscriptions" }
+    },
+    condition: {
+      regexFilter: "^https://(www\\.)?youtube\\.com/?$",
+      resourceTypes: ["main_frame"]
+    }
+  }
+];
+
+// --- Rule management ---
+function enableRedirects() {
+  chrome.declarativeNetRequest.updateDynamicRules({
+    addRules: subscriptionRedirectRules,
+    removeRuleIds: subscriptionRedirectRules.map(r => r.id)
+  }).then(() => console.log("Redirect rules enabled"))
+    .catch(err => console.error("Failed to enable redirect rules:", err));
 }
 
+function disableRedirects() {
+  chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: subscriptionRedirectRules.map(r => r.id)
+  }).then(() => console.log("Redirect rules disabled"))
+    .catch(err => console.error("Failed to disable redirect rules:", err));
+}
 
-updateCurrentSettings();
-
-console.log("Service worker is working")
+// --- Message handling ---
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "toggleRedirects") {
+    msg.enabled ? enableRedirects() : disableRedirects();
+  }
+});
