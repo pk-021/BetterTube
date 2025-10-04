@@ -1,0 +1,98 @@
+# BTube (BetterYoutube)
+
+BTube is a browser extension that enhances your YouTube experience by making it more productive and less distracting. It provides features to customize your homepage, block unwanted content, and organize your favorite videos with bookmarks and folders.
+
+---
+
+## Features
+
+- **Minimal Homepage**: Hide the YouTube home feed for a cleaner, distraction-free experience.
+- **Redirect Home**: Automatically redirect the YouTube homepage and certain pages (like Trending and Shorts) to your Subscriptions feed.
+- **Disable Shorts**: Hide YouTube Shorts from the sidebar, search results, and homepage.
+- **Bookmarks & Folders**: Bookmark videos at specific timestamps and organize them into folders for easy access.
+- **Dark Mode**: Toggle dark mode for the extension popup and settings.
+- **Extension Lock**: Secure the extension with a password and reset it if forgotten.
+
+---
+
+## Getting Started
+
+1. **Install the Extension**  
+   Load the extension in your browser (e.g., Chrome) via the Extensions page (`chrome://extensions`), enabling "Developer mode" and loading the project folder as an unpacked extension.
+
+2. **Open the Popup**  
+   Click the BTube icon in your browser toolbar to open the popup.  
+   - View and manage your bookmark folders.
+   - Access settings and dark mode toggle.
+
+3. **Bookmark Videos**  
+   On any YouTube video page, use the bookmark button in the video player controls to save the current timestamp to a folder.
+
+4. **Settings**  
+   Access the settings page to:
+   - Enable/disable the extension.
+   - Toggle homepage redirection, Shorts hiding, and minimal homepage.
+   - Set or change your extension password.
+
+
+---
+
+## File Structure
+
+- `manifest.json` – Extension manifest and permissions.
+- `popup.html`, `js/popup.js`, `css/popup.css` – Popup UI and logic.
+- `settings.html`, `js/settings.js`, `css/settings.css` – Settings UI and logic.
+- `login.html`, `js/login.js`, `css/login.css` – Password lock and reset.
+- `js/background.js` – Service worker for background tasks and redirect rules.
+- `js/content.js`, `css/content.css` – Content script for modifying YouTube pages and injecting UI.
+- `assets/` – Icons and images.
+
+---
+
+## Permissions
+
+- Access to YouTube pages (`*://*.youtube.com/*`)
+- Storage for settings and bookmarks
+- Tab and navigation management
+- Declarative Net Request for redirecting pages
+
+---
+
+## Security
+
+- All extension settings can be locked with a password.
+- Passwords are stored locally and can be reset via a simple challenge.
+
+---
+
+## Development
+
+1. Clone or download this repository.
+2. Load as an unpacked extension in your browser.
+3. Edit source files as needed.  
+   - Popup and settings UIs are in HTML/CSS/JS.
+   - Content scripts modify YouTube in real time.
+
+---
+
+## License
+
+
+---
+
+## Credits
+- Inspirations from Unhooked Extension, StayFocusd Extension and others
+- Inspired by a Hackathon project-UnBind.
+- Icons and assets are original or from open sources.
+
+---
+
+## Contributing
+
+Pull requests and suggestions are welcome!
+
+---
+
+## Contact
+
+For issues or feature requests, open an issue on GitHub or contact the maintainer.
