@@ -75,8 +75,8 @@ html[redirect_home=true] .yt-simple-endpoint[title=Home]{
     display: none !important;
 }
 
+.bookmark-btn svg.bookmark-icon {
 
-/* Bookmark button */
-.bookmark-btn {
-    overflow: visible !important;
+    fill: #fff; /* match YouTube icon color */
+    pointer-events: none; /* allow clicks to pass to button */
 }

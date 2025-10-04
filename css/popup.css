@@ -30,18 +30,17 @@ body {
 
 /* Folder headings */
 .folder-heading {
-  padding-left: 10px;
+  padding-left: 12px;
   transition: color 0.35s ease;
 }
 
 .folder-title {
-  padding-left: 10px;
   transition: color 0.35s ease;
 }
 
 /* Top line */
 .line {
-  padding: 6px;
+  padding: 12px;
   display: flex;
   align-items: center;
   position: relative;
@@ -70,7 +69,6 @@ body {
   display: flex;
   align-items: center;
   margin-left: auto;
-  gap: 8px;
 }
 
 #settingsButton,
@@ -83,6 +81,7 @@ body {
   border-radius: 18px;
   transition: background-color 0.35s ease;
 }
+
 
 #settingsButton img,
 .dark img {
@@ -124,7 +123,7 @@ body {
   font-size: 1.05rem;
   position: relative;
   margin-bottom: 10px;
-  padding: 0 8px;
+  padding: 0 12px;
 }
 
 /* Right-side group (chevron + delete) */
@@ -184,6 +183,7 @@ body {
 
 /* Bookmark block */
 .bookmark {
+  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;

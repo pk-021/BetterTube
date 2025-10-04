@@ -1,3 +1,5 @@
+"use strict";
+
 // --- Containers ---
 const loginContainer = document.getElementById("login-container");
 const setupContainer = document.getElementById("setup-container");
@@ -53,6 +55,13 @@ function applyDarkMode() {
   });
 }
 
+// --- Password strength check ---
+function isStrongPassword(password) {
+  // Minimum 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+  const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  return strongRegex.test(password);
+}
+
 // --- Initialize page ---
 async function init() {
   applyDarkMode(); // Apply dark mode on load
@@ -70,14 +79,28 @@ saveButton.addEventListener("click", async () => {
   const newPass = newPasswordInput.value.trim();
   const confirmPass = confirmPasswordInput.value.trim();
 
-  if (newPass && newPass === confirmPass) {
-    await chrome.storage.local.set({ extensionPassword: newPass });
-    alert("Password set successfully! Please log in.");
-    showContainer(loginContainer);
-    setupError.classList.add("hidden");
-  } else {
+  if (!newPass) {
+    setupError.textContent = "Password cannot be empty.";
     setupError.classList.remove("hidden");
+    return;
   }
+
+  if (newPass !== confirmPass) {
+    setupError.textContent = "Passwords do not match.";
+    setupError.classList.remove("hidden");
+    return;
+  }
+
+  if (!isStrongPassword(newPass)) {
+    setupError.textContent = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+    setupError.classList.remove("hidden");
+    return;
+  }
+
+  await chrome.storage.local.set({ extensionPassword: newPass });
+  alert("Password set successfully! Please log in.");
+  showContainer(loginContainer);
+  setupError.classList.add("hidden");
 });
 
 // --- Check login ---
@@ -134,6 +157,7 @@ resetNextBtn.addEventListener("click", async () => {
   }
 });
 
+// --- Initialize on DOM load ---
 window.addEventListener("DOMContentLoaded", () => {
   init();
   setTimeout(() => {

@@ -40,7 +40,7 @@ function updateCurrentSettings() {
 
         chrome.runtime.sendMessage({ type: "toggleRedirects", enabled: settings.redirect_home });
         chrome.runtime.sendMessage({ type: "toggleShorts", enabled: settings.hide_shorts });
-        
+
         //when redirect is turned on at homepage
         if (settingCache.redirect_home) {
             const url = window.location.href;
@@ -200,22 +200,30 @@ let loadBookmarkButton = () => {
         return;
     }
 
-    let youtubeRightControls;
-    const button = document.getElementsByClassName("bookmark-btn")[0];
-    console.log("TRYING TO LOAD BUTTON!")
+    const button = document.querySelector(".bookmark-btn");
+    console.log("TRYING TO LOAD BUTTON!");
 
     if (!button) {
-        const bookmarkBtn = document.createElement("img");
-
-        bookmarkBtn.src = chrome.runtime.getURL("assets/bookmark.png");
-        bookmarkBtn.className = "ytp-button  " + "bookmark-btn";
+        // Create button wrapper
+        const bookmarkBtn = document.createElement("button");
+        bookmarkBtn.className = "ytp-button bookmark-btn";
         bookmarkBtn.title = "Click to bookmark current timestamp";
         bookmarkBtn.addEventListener("click", addNewBookmarkEventHandler);
 
-        youtubeRightControls = document.getElementsByClassName("ytp-right-controls")[0];
+        // Inline SVG
+        bookmarkBtn.innerHTML = `
+        <svg class="bookmark-icon" viewBox="0 0 24 24" width="100%" height="100%" fill="#fff" fill-opacity="1" xmlns="http://www.w3.org/2000/svg">
+            <g transform="scale(0.6) translate(8 8)">
+                <path d="M6 4C6 3.45 6.45 3 7 3H17C17.55 3 18 3.45 18 4V21L12 17L6 21V4Z"/>
+            </g>
+        </svg>
+
+
+        `;
+
+        const youtubeRightControls = document.querySelector(".ytp-right-controls");
         if (youtubeRightControls) {
-            console.log("Youtube right controls found!")
-            console.log(youtubeRightControls);
+            console.log("Youtube right controls found!");
             youtubeRightControls.prepend(bookmarkBtn);
         }
     }
