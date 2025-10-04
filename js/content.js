@@ -54,10 +54,9 @@ function update_home_props() {
     const url = window.location.href;
     if (/^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)) {
         document.documentElement.setAttribute("is_home", true);
-        if (settingCache.minimal_homepage) {
-            searchbar = document.querySelector("#center");
-            searchbar.append(homeCenterLogo);
-        }
+        searchbar = document.querySelector("#center");
+        searchbar.append(homeCenterLogo);
+        console.log("Center logo attached!")
     }
     else {
         document.documentElement.setAttribute("is_home", false)

@@ -35,11 +35,15 @@ html[hide_shorts=true] ytd-reel-shelf-renderer,
 /* html[hide_shorts=true] ytm-video-with-context-renderer:has(a[href*="/shorts/"]) */
 
 
-/* homepage better contents */
-html[is_home=true] ytd-rich-grid-renderer {
+
+/* 1. Hide only visible home feed */
+ytd-browse[page-subtype="home"] #contents {
     display: none !important;
 }
 
+#chips-wrapper {
+    display: none !important;
+}
 
 html[is_home=true] #center:has(yt-searchbox) {
     position: fixed;
@@ -47,7 +51,6 @@ html[is_home=true] #center:has(yt-searchbox) {
     left: 50vw;
     transform: translate(-50%, -50%);
     width: 45%;
-    /* display: none; */
 }
 
 .homeCenterLogo {
@@ -64,8 +67,7 @@ html[is_home=true] .homeCenterLogo {
     height: 8rem;
 }
 
-
 /* Bookmark button */
 .bookmark-btn {
-    overflow:visible !important;
+    overflow: visible !important;
 }
