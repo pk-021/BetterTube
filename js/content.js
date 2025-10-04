@@ -3,6 +3,13 @@
 // =======================
 let storage = chrome.storage.local;
 
+let offSettings = {
+    minimal_homepage: false,
+    hide_feed: false,
+    redirect_home: false,
+    hide_shorts: false,
+    BTubeOn: false
+}
 
 let settingCache = {};
 
@@ -22,12 +29,20 @@ function getSettings(callback, keys = null) {
 
 function updateCurrentSettings() {
     getSettings(settings => {
-        settingCache = settings;
-        console.log("updated settings:", settings);
-        applyAttributes(settings);
+        if (!settings.BTubeOn) {
+            settingCache = offSettings;
+        }
+        else {
+            settingCache = settings;
+        }
+        applyAttributes(settingCache);
+        console.log("updated settings:", settingCache);
 
         chrome.runtime.sendMessage({ type: "toggleRedirects", enabled: settings.redirect_home });
-        if (settings.redirect_home) {
+        chrome.runtime.sendMessage({ type: "toggleShorts", enabled: settings.hide_shorts });
+        
+        //when redirect is turned on at homepage
+        if (settingCache.redirect_home) {
             const url = window.location.href;
             if (/^https:\/\/.*\.youtube\.com\/(?:\?.*)?$/.test(url)) {
                 navigateToSubscriptions();

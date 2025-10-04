@@ -11,75 +11,78 @@ const defaultSettings = {
   BTubeOn: true
 };
 
-// Initialize settings (set defaults if none exist)
+// --- Initialize settings (set defaults if none exist) ---
 chrome.storage.local.get(null, (existing) => {
-  if (!Object.keys(existing).length) {
-    chrome.storage.local.set(defaultSettings);
-  } else {
-    const merged = { ...defaultSettings, ...existing };
-    chrome.storage.local.set(merged);
-  }
+  const mergedSettings = { ...defaultSettings, ...existing };
+  chrome.storage.local.set(mergedSettings);
 });
 
 // --- Redirect rules ---
-const subscriptionRedirectRules = [
+const homeRedirectRules = [
   {
     id: 1,
     priority: 1,
-    action: {
-      type: "redirect",
-      redirect: { url: "https://www.youtube.com/feed/subscriptions" }
-    },
-    condition: {
-      urlFilter: "youtube.com/feed/trending",
-      resourceTypes: ["main_frame"]
-    }
+    action: { type: "redirect", redirect: { url: "https://www.youtube.com/feed/subscriptions" } },
+    condition: { urlFilter: "youtube.com/feed/trending", resourceTypes: ["main_frame"] }
   },
   {
     id: 2,
     priority: 1,
-    action: {
-      type: "redirect",
-      redirect: { url: "https://www.youtube.com/feed/subscriptions" }
-    },
-    condition: {
-      urlFilter: "youtube.com/shorts",
-      resourceTypes: ["main_frame"]
-    }
+    action: { type: "redirect", redirect: { url: "https://www.youtube.com/feed/subscriptions" } },
+    condition: { urlFilter: "youtube.com/shorts", resourceTypes: ["main_frame"] }
   },
   {
     id: 3,
     priority: 1,
-    action: {
-      type: "redirect",
-      redirect: { url: "https://www.youtube.com/feed/subscriptions" }
-    },
-    condition: {
-      regexFilter: "^https://(www\\.)?youtube\\.com/?$",
-      resourceTypes: ["main_frame"]
-    }
+    action: { type: "redirect", redirect: { url: "https://www.youtube.com/feed/subscriptions" } },
+    condition: { regexFilter: "^https://(www\\.)?youtube\\.com/?$", resourceTypes: ["main_frame"] }
+  }
+];
+
+const shortsRedirectRules = [
+  {
+    id: 4, // changed to unique ID
+    priority: 1,
+    action: { type: "redirect", redirect: { url: "https://www.youtube.com/feed/subscriptions" } },
+    condition: { urlFilter: "youtube.com/shorts", resourceTypes: ["main_frame"] }
   }
 ];
 
 // --- Rule management ---
-function enableRedirects() {
-  chrome.declarativeNetRequest.updateDynamicRules({
-    addRules: subscriptionRedirectRules,
-    removeRuleIds: subscriptionRedirectRules.map(r => r.id)
-  }).then(() => console.log("Redirect rules enabled"))
-    .catch(err => console.error("Failed to enable redirect rules:", err));
+async function updateRedirectRules(rulesToAdd, rulesToRemove) {
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      addRules: rulesToAdd,
+      removeRuleIds: rulesToRemove
+    });
+    console.log("Redirect rules updated");
+  } catch (err) {
+    console.error("Failed to update redirect rules:", err);
+  }
 }
 
-function disableRedirects() {
-  chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: subscriptionRedirectRules.map(r => r.id)
-  }).then(() => console.log("Redirect rules disabled"))
-    .catch(err => console.error("Failed to disable redirect rules:", err));
+function enableHomeRedirects() {
+  updateRedirectRules(homeRedirectRules, homeRedirectRules.map(r => r.id));
 }
 
-// --- Message handling ---
+function disableHomeRedirects() {
+  updateRedirectRules([], homeRedirectRules.map(r => r.id));
+}
+
+function enableShortsRedirects() {
+  updateRedirectRules(shortsRedirectRules, shortsRedirectRules.map(r => r.id));
+}
+
+function disableShortsRedirects() {
+  updateRedirectRules([], shortsRedirectRules.map(r => r.id));
+}
+
+// --- Listen for messages ---
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "toggleRedirects") {
-    msg.enabled ? enableRedirects() : disableRedirects();
+    msg.enabled ? enableHomeRedirects() : disableHomeRedirects();
+  } else if (msg.type === "toggleShorts") {
+    // fixed typo 'elabled' → 'enabled'
+    msg.enabled ? enableShortsRedirects() : disableShortsRedirects();
   }
 });
