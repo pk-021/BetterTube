@@ -14,26 +14,32 @@ BTube is a browser extension that enhances your YouTube experience by making it 
 - **Extension Lock**: Secure the extension with a password and reset it if forgotten.
 
 ---
-
 ## Getting Started
 
-1. **Install the Extension**  
-   Load the extension in your browser (e.g., Chrome) via the Extensions page (`chrome://extensions`), enabling "Developer mode" and loading the project folder as an unpacked extension.
+### 1. Install the Extension
+- Download or clone this repository to your computer.  
+- Open your browser’s **Extensions page**:  
+  - Chrome: `chrome://extensions/`  
+  - Edge: `edge://extensions/`  
+- Enable **Developer Mode** (toggle in the top right).  
+- Click **Load unpacked** and select the project folder.  
+- The extension will now be installed.
 
-2. **Open the Popup**  
-   Click the BTube icon in your browser toolbar to open the popup.  
-   - View and manage your bookmark folders.
-   - Access settings and dark mode toggle.
+### 2. Open the Popup
+- Click the **BTube icon** in your browser toolbar to open the popup.  
+- From here, you can:  
+  - View and manage your bookmark folders.  
+  - Access settings and toggle dark mode.  
 
-3. **Bookmark Videos**  
-   On any YouTube video page, use the bookmark button in the video player controls to save the current timestamp to a folder.
+### 3. Bookmark Videos
+- On any YouTube video page, use the **bookmark button** in the video player controls.  
+- Save the current timestamp to a folder for quick access later.  
 
-4. **Settings**  
-   Access the settings page to:
-   - Enable/disable the extension.
-   - Toggle homepage redirection, Shorts hiding, and minimal homepage.
-   - Set or change your extension password.
-
+### 4. Settings
+- Open the **settings page** to:  
+  - Enable or disable the extension.  
+  - Toggle homepage redirection, hide Shorts, or enable a minimal homepage.  
+  - Set or change your extension password.  
 
 ---
 
