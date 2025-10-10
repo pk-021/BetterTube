@@ -17,6 +17,11 @@ const confirmPasswordInput = document.getElementById("confirm-password");
 const saveButton = document.getElementById("save-password");
 const setupError = document.getElementById("setup-error");
 
+// --- Custom notification elements ---
+const customNotification = document.getElementById("custom-notification");
+const notificationMessage = document.getElementById("notification-message");
+const notificationCloseButton = document.getElementById("notification-close");
+
 // --- Reset elements ---
 const currentWordEl = document.getElementById("current-word");
 const resetInput = document.getElementById("reset-input");
@@ -24,14 +29,24 @@ const resetNextBtn = document.getElementById("reset-next");
 
 // --- Reset words ---
 const resetWords = [
-  "orange", "castle", "mirror", "planet", "forest",
-  "window", "guitar", "breeze", "pillow", "dragon"
+  "orange",
+  "castle",
+  "mirror",
+  "planet",
+  "forest",
+  "window",
+  "guitar",
+  "breeze",
+  "pillow",
+  "dragon",
 ];
 let currentResetIndex = 0;
 
 // --- Helper to show/hide containers ---
 function showContainer(container) {
-  [loginContainer, setupContainer, resetContainer].forEach(c => c.classList.add("hidden"));
+  [loginContainer, setupContainer, resetContainer].forEach((c) =>
+    c.classList.add("hidden")
+  );
   container.classList.remove("hidden");
 }
 
@@ -92,14 +107,14 @@ saveButton.addEventListener("click", async () => {
   }
 
   if (!isStrongPassword(newPass)) {
-    setupError.textContent = "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+    setupError.textContent =
+      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
     setupError.classList.remove("hidden");
     return;
   }
 
   await chrome.storage.local.set({ extensionPassword: newPass });
-  alert("Password set successfully! Please log in.");
-  showContainer(loginContainer);
+  showNotification("Password set successfully! Please log in.");
   setupError.classList.add("hidden");
 });
 
@@ -144,18 +159,50 @@ resetNextBtn.addEventListener("click", async () => {
 
     if (currentResetIndex >= resetWords.length) {
       await chrome.storage.local.remove("extensionPassword");
-      alert("Password reset successful! Please set a new password.");
-      showContainer(setupContainer);
+      showNotification(
+        "Password reset successful! Please set a new password.",
+        setupContainer
+      );
     } else {
       showCurrentWord();
     }
   } else {
-    alert("Incorrect word! Start over.");
+    showNotification("Incorrect word! Start over.");
     currentResetIndex = 0;
     resetInput.value = "";
     showCurrentWord();
   }
 });
+
+// --- Custom notification function ---
+function showNotification(message, targetContainer = loginContainer) {
+  notificationMessage.textContent = message;
+
+  // Show the notification
+  customNotification.style.opacity = "0";
+  customNotification.classList.remove("hidden");
+
+  void customNotification.offsetWidth;
+  customNotification.style.opacity = "1";
+
+  // Focus the OK button
+  setTimeout(() => {
+    notificationCloseButton.focus();
+  }, 100);
+
+  // Setup event listener for the OK button
+  notificationCloseButton.addEventListener("click", function closeHandler() {
+    // Fade out effect
+    customNotification.style.opacity = "0";
+
+    // Wait for transition to complete before hiding
+    setTimeout(() => {
+      customNotification.classList.add("hidden");
+      showContainer(targetContainer);
+      notificationCloseButton.removeEventListener("click", closeHandler);
+    }, 300);
+  });
+}
 
 // --- Initialize on DOM load ---
 window.addEventListener("DOMContentLoaded", () => {
