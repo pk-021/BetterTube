@@ -1,41 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unlock Extension</title>
-  <link rel="stylesheet" href="css/login.css" />
-</head>
-<body>
-  <div class="card-container">
-    <!-- Setup password form -->
-    <div id="setup-container" class="hidden">
-      <h3>Set Password</h3>
-      <input type="password" id="new-password" placeholder="Enter password" />
-      <input type="password" id="confirm-password" placeholder="Confirm password" />
-      <button id="save-password" class="btn-success">Save Password</button>
-      <p id="setup-error" class="text-danger hidden">Passwords do not match!</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unlock Extension</title>
+    <link rel="stylesheet" href="css/login.css" />
+  </head>
+  <body>
+    <!-- Custom notification element -->
+    <div id="custom-notification" class="custom-notification hidden">
+      <div class="notification-content">
+        <h3>BetterTube</h3>
+        <p id="notification-message"></p>
+        <button id="notification-close" class="btn-primary">OK</button>
+      </div>
     </div>
 
-    <!-- Login form -->
-    <div id="login-container" class="hidden">
-      <h3>Enter Password</h3>
-      <input type="password" id="password-input" placeholder="Password" />
-      <button id="submit-password" class="btn-primary">Unlock</button>
-      <button id="forgot-password" class="forgot-btn">Forgot Password?</button>
-      <p id="error-message" class="text-danger hidden">Incorrect password!</p>
+    <div class="card-container">
+      <!-- Setup password form -->
+      <div id="setup-container" class="hidden">
+        <h3>Set Password</h3>
+        <input type="password" id="new-password" placeholder="Enter password" />
+        <input
+          type="password"
+          id="confirm-password"
+          placeholder="Confirm password"
+        />
+        <button id="save-password" class="btn-success">Save Password</button>
+        <p id="setup-error" class="text-danger hidden">
+          Passwords do not match!
+        </p>
+      </div>
+
+      <!-- Login form -->
+      <div id="login-container" class="hidden">
+        <h3>Enter Password</h3>
+        <input type="password" id="password-input" placeholder="Password" />
+        <button id="submit-password" class="btn-primary">Unlock</button>
+        <button id="forgot-password" class="forgot-btn">
+          Forgot Password?
+        </button>
+        <p id="error-message" class="text-danger hidden">Incorrect password!</p>
+      </div>
+
+      <!-- Password reset form -->
+      <div id="reset-container" class="hidden">
+        <h3>Reset Password</h3>
+        <p>Type the following word:</p>
+        <div id="current-word" class="current-word"></div>
+        <input type="text" id="reset-input" placeholder="Type the word here" />
+        <button id="reset-next" class="btn-warning">Next</button>
+      </div>
     </div>
 
-    <!-- Password reset form -->
-    <div id="reset-container" class="hidden">
-      <h3>Reset Password</h3>
-      <p>Type the following word:</p>
-      <div id="current-word" class="current-word"></div>
-      <input type="text" id="reset-input" placeholder="Type the word here" />
-      <button id="reset-next" class="btn-warning">Next</button>
-    </div>
-  </div>
-
-  <script src="js/login.js"></script>
-</body>
+    <script src="js/login.js"></script>
+  </body>
 </html>
