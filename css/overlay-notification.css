@@ -1,0 +1,174 @@
+/* Overlay Notification Styles */
+.btube-notification-overlay {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  width: 320px !important;
+  z-index: 2147483647 !important; /* Maximum z-index */
+  pointer-events: none !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  display: flex !important;
+  flex-direction: column-reverse !important; /* Newest at the bottom */
+  align-items: flex-end !important; /* Align to right */
+  gap: 10px !important; /* Space between notifications */
+}
+
+.btube-notification {
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden !important;
+  transform: translateX(100%) !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  pointer-events: auto !important;
+  max-width: 320px !important;
+}
+
+.btube-notification.show {
+  transform: translateX(0) !important;
+}
+
+.btube-notification.hide {
+  transform: translateX(100%) !important;
+}
+
+.btube-notification-header {
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 16px 8px 16px !important;
+  background: #f8f8f8 !important;
+  border-bottom: 1px solid #e0e0e0 !important;
+}
+
+.btube-notification-logo {
+  width: 20px !important;
+  height: 20px !important;
+  margin-right: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.btube-notification-title {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  color: #222222 !important;
+  flex: 1 !important;
+  margin: 0 !important;
+}
+
+.btube-notification-close {
+  background: none !important;
+  border: none !important;
+  font-size: 18px !important;
+  color: #666666 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  transition: background-color 0.2s ease !important;
+  line-height: 1 !important;
+}
+
+.btube-notification-close:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+  color: #222222 !important;
+}
+
+.btube-notification-body {
+  padding: 16px !important;
+}
+
+.btube-notification-message {
+  margin: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  color: #222222 !important;
+}
+
+.btube-notification-actions {
+  padding: 8px 16px 16px 16px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+.btube-notification-btn {
+  background-color: #ff0000 !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+.btube-notification-btn:hover {
+  background-color: #cc0000 !important;
+}
+
+.btube-notification-btn:focus {
+  outline: 2px solid #ff6666 !important;
+  outline-offset: 2px !important;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  .btube-notification {
+    background: #2a2a2a !important;
+    border: 1px solid #3a3a3a !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .btube-notification-header {
+    background: #1e1e1e !important;
+    border-bottom: 1px solid #3a3a3a !important;
+  }
+
+  .btube-notification-title {
+    color: #e0e0e0 !important;
+  }
+
+  .btube-notification-close {
+    color: #aaaaaa !important;
+  }
+
+  .btube-notification-close:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #e0e0e0 !important;
+  }
+
+  .btube-notification-message {
+    color: #e0e0e0 !important;
+  }
+
+  .btube-notification-logo {
+    filter: brightness(0.9) !important;
+  }
+}
+
+/* Animation for multiple notifications */
+.btube-notification-overlay .btube-notification:not(:first-child) {
+  margin-top: 0 !important; /* handled by gap */
+}
+
+/* Progress bar for auto-close */
+.btube-notification-progress {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  height: 3px !important;
+  background-color: #ff0000 !important;
+  transition: width 0.1s linear !important;
+  width: 100% !important;
+}
+
+.btube-notification-progress.animate {
+  width: 0% !important;
+  transition: width 5s linear !important;
+}

@@ -114,7 +114,7 @@ saveButton.addEventListener("click", async () => {
   }
 
   await chrome.storage.local.set({ extensionPassword: newPass });
-  showNotification("Password set successfully! Please log in.");
+  showNotification("Password set successfully! Please log in.", loginContainer);
   setupError.classList.add("hidden");
 });
 
@@ -174,8 +174,26 @@ resetNextBtn.addEventListener("click", async () => {
   }
 });
 
-// --- Custom notification function ---
-function showNotification(message, targetContainer = loginContainer) {
+// --- Browser notification function ---
+function showBrowserNotification(message, type = 'info') {
+  chrome.runtime.sendMessage({
+    type: 'showNotification',
+    message: message,
+    notificationType: type
+  });
+}
+
+// --- Custom notification function (for login page) ---
+function showNotification(message, targetContainer = loginContainer, useBrowserNotification = false) {
+  // If useBrowserNotification is true, show browser notification instead
+  if (useBrowserNotification) {
+    showBrowserNotification(message);
+    if (targetContainer !== loginContainer) {
+      showContainer(targetContainer);
+    }
+    return;
+  }
+
   notificationMessage.textContent = message;
 
   // Show the notification

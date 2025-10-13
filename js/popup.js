@@ -1,3 +1,27 @@
+// --- Notification Helper ---
+function showNotification(message, type = 'info') {
+    console.log('Sending notification request:', message);
+    
+    // For popup context, we need to use background message
+    chrome.runtime.sendMessage({
+        type: 'showNotification',
+        message: message,
+        notificationType: type
+    }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.error('Notification error:', chrome.runtime.lastError);
+            // If there's an error, try a simple alert as ultimate fallback for testing
+            if (message.includes('test')) {
+                alert(`BTube: ${message}`);
+            }
+        } else if (response && !response.success) {
+            console.error('Notification failed:', response.error);
+        } else {
+            console.log('Notification request successful');
+        }
+    });
+}
+
 // --- Dark Mode Toggle ---
 const darkModeToggle = document.getElementById("darkModeToggle");
 
@@ -22,6 +46,9 @@ darkModeToggle.addEventListener("click", () => {
 
     // Save preference
     chrome.storage.local.set({ darkModeEnabled: !isDark });
+    
+    // Show notification when dark mode is toggled
+    showNotification(`Dark mode ${!isDark ? 'enabled' : 'disabled'}`, 'info');
 });
 
 
@@ -183,6 +210,15 @@ function closePopup() {
 
 window.addEventListener("DOMContentLoaded", () => {
     renderBookmarksFromStorage();
+    
+    // Test notification button (uncomment for testing)
+    const testBtn = document.getElementById("test-notification");
+    if (testBtn) {
+        testBtn.addEventListener("click", () => {
+            showNotification("This is a test notification from BTube!", "info");
+        });
+    }
+    
     // Short delay to allow initial paint
     setTimeout(() => {
         document.body.setAttribute("data-loaded", "true");

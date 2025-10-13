@@ -12,6 +12,7 @@ BTube is a browser extension that enhances your YouTube experience by making it 
 - **Bookmarks & Folders**: Bookmark videos at specific timestamps and organize them into folders for easy access.
 - **Dark Mode**: Toggle dark mode for the extension popup and settings.
 - **Extension Lock**: Secure the extension with a password and reset it if forgotten.
+- **Smart Overlay Notifications**: Get beautiful, non-intrusive notifications that appear as overlays on any webpage - just like Bitwarden and other modern extensions.
 
 ---
 ## Getting Started
@@ -49,7 +50,8 @@ BTube is a browser extension that enhances your YouTube experience by making it 
 - `popup.html`, `js/popup.js`, `css/popup.css` – Popup UI and logic.
 - `settings.html`, `js/settings.js`, `css/settings.css` – Settings UI and logic.
 - `login.html`, `js/login.js`, `css/login.css` – Password lock and reset.
-- `js/background.js` – Service worker for background tasks and redirect rules.
+- `notification.html`, `js/notification.js`, `css/notification.css` – Bottom-right notification system.
+- `js/background.js` – Service worker for background tasks, redirect rules, and notification handling.
 - `js/content.js`, `css/content.css` – Content script for modifying YouTube pages and injecting UI.
 - `assets/` – Icons and images.
 
@@ -61,6 +63,8 @@ BTube is a browser extension that enhances your YouTube experience by making it 
 - Storage for settings and bookmarks
 - Tab and navigation management
 - Declarative Net Request for redirecting pages
+- Notifications for user feedback
+- Notifications for user feedback
 
 ---
 

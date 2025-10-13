@@ -456,6 +456,23 @@ function showModal() {
             } else return;
 
             saveBookMarksToStorage();
+            
+            // Show notification that bookmark was saved using overlay
+            if (window.btubeOverlay) {
+                window.btubeOverlay.showNotification('Bookmark saved successfully!', 'success');
+            } else {
+                // Fallback to background notification
+                chrome.runtime.sendMessage({
+                    type: 'showNotification',
+                    message: 'Bookmark saved successfully!',
+                    notificationType: 'success'
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('Notification error:', chrome.runtime.lastError);
+                    }
+                });
+            }
+            
             closeModalAnimated();
         });
     });

@@ -1,3 +1,18 @@
+// --- Notification Helper ---
+function showNotification(message, type = 'info') {
+    chrome.runtime.sendMessage({
+        type: 'showNotification',
+        message: message,
+        notificationType: type
+    }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.error('Notification error:', chrome.runtime.lastError);
+        } else if (response && !response.success) {
+            console.error('Notification failed:', response.error);
+        }
+    });
+}
+
 // --- Get dark mode preference ---
 function applyDarkMode() {
     chrome.storage.local.get("darkModeEnabled", (data) => {
@@ -35,6 +50,17 @@ function initSettingsToggles() {
             checkbox.addEventListener("change", () => {
                 const newValue = checkbox.checked;
                 chrome.storage.local.set({ [storageKey]: newValue });
+                
+                // Show notification for setting changes
+                const settingNames = {
+                    "extension-online": "Extension",
+                    "redirect-subscriptions": "Redirect to Subscriptions",
+                    "disable-shorts": "Disable Shorts",
+                    "minimal-homepage": "Minimal Homepage"
+                };
+                
+                const settingName = settingNames[checkboxId];
+                showNotification(`${settingName} ${newValue ? 'enabled' : 'disabled'}`, 'info');
             });
         }
     });
