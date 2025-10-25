@@ -77,52 +77,15 @@ function disableShortsRedirects() {
   updateRedirectRules([], shortsRedirectRules.map(r => r.id));
 }
 
-// --- Overlay Notification system ---
-async function showOverlayNotification(message, type = 'info') {
-  try {
-    // Get the current active tab
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tabs.length === 0) throw new Error('No active tab found');
-    const tab = tabs[0];
-    if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
-      throw new Error('Cannot show overlay on this page type');
-    }
-    // Check for overlay and inject if needed
-    const checkResults = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'ISOLATED',
-      func: () => Boolean(window.btubeOverlay)
+// --- Notification system ---
+function showOverlayNotification(message, type = 'info') {
+  if (chrome && chrome.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'assets/logo_v2.png',
+      title: 'BTube',
+      message: message
     });
-    const hasOverlay = Array.isArray(checkResults) && checkResults[0] && checkResults[0].result === true;
-    if (!hasOverlay) {
-      await chrome.scripting.insertCSS({ target: { tabId: tab.id }, files: ['css/overlay-notification.css'] });
-      await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'ISOLATED', files: ['js/overlay-notification.js'] });
-      // Poll for ready
-      let ready = false;
-      for (let i = 0; i < 3 && !ready; i++) {
-        await new Promise(r => setTimeout(r, 100 + i * 100));
-        const readyResults = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'ISOLATED', func: () => Boolean(window.btubeOverlay) });
-        ready = Array.isArray(readyResults) && readyResults[0] && readyResults[0].result === true;
-      }
-      if (!ready) throw new Error('Overlay failed to initialize');
-    }
-    // Show notification
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      world: 'ISOLATED',
-      func: (msg, t) => { window.btubeOverlay && window.btubeOverlay.showNotification(msg, t); },
-      args: [message, type]
-    });
-    return;
-  } catch (error) {
-    // Fallback: popup window, then Chrome notification
-    try {
-      await chrome.windows.create({ url: `notification.html?message=${encodeURIComponent(message)}&type=${type}`, type: 'popup', width: 340, height: 180, focused: true });
-      return;
-    } catch (windowError) {}
-    try {
-      await chrome.notifications.create({ type: 'basic', iconUrl: 'assets/logo_v2.png', title: 'BTube', message });
-    } catch (notificationError) {}
   }
 }
 
@@ -140,7 +103,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   } else if (msg.type === "showNotification") {
     console.log('Processing notification request:', msg.message);
     // Handle async overlay notification
-    showOverlayNotification(msg.message, msg.notificationType || 'info')
+  showOverlayNotification(msg.message, msg.notificationType || 'info')
       .then(() => {
         console.log('Notification sent successfully');
         sendResponse({ success: true });

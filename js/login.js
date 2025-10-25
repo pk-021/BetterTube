@@ -124,7 +124,28 @@ async function checkPassword() {
   const password = await getPassword();
 
   if (enteredPass === password) {
-    window.location.href = "settings.html";
+    // Check for pending settings in storage
+    chrome.storage.local.get('btube_pending_settings', (data) => {
+      if (data.btube_pending_settings) {
+          chrome.storage.local.set(data.btube_pending_settings, () => {
+            chrome.storage.local.remove('btube_pending_settings');
+            // Use Chrome's built-in notification
+            if (chrome && chrome.notifications) {
+              chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'assets/logo_v2.png',
+                title: 'BTube',
+                message: 'Settings changes saved after login.'
+              });
+            }
+            setTimeout(() => {
+              window.location.href = "popup.html";
+            }, 800);
+          });
+      } else {
+        window.location.href = "settings.html";
+      }
+    });
   } else {
     error.classList.remove("hidden");
     input.value = "";

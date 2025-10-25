@@ -68,12 +68,11 @@ body {
 .controls {
   display: flex;
   align-items: center;
+  gap: 14px;
   margin-left: auto;
 }
 
-#settingsButton,
-.settings,
-.dark {
+.controls .dark {
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -91,6 +90,23 @@ body {
 }
 
 /* Lists container */
+.content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 56px; /* space for footer tabbar */
+  overflow: hidden;
+}
+
+.tab-view {
+  display: none;
+  overflow: hidden;
+}
+
+.tab-view.active {
+  display: block;
+}
+
 .lists {
   min-height: 200px;
 }
@@ -322,6 +338,12 @@ html[dark_mode="true"] .delete-bookmark:hover {
 }
 
 /* Dark mode icons */
+html[dark_mode="true"] .chevron {
+  filter: brightness(0) invert(1);
+}
+html[dark_mode="true"] .delete-folder {
+  filter: brightness(0) invert(1);
+}
 html[dark_mode="true"] #popup #darkModeToggle img,
 html[dark_mode="true"] #popup #settingsButton img {
   filter: invert(1) brightness(1.2) contrast(1.2);
@@ -332,3 +354,175 @@ body:not([data-loaded]) *,
 body:not([data-loaded]) {
   transition: none !important;
 }
+
+/* --- Footer Tab Bar --- */
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: stretch;
+  border-top: 1px solid var(--hover);
+  z-index: 10;
+}
+
+.tabbar .tab-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font: inherit;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: color 0.25s ease, background-color 0.25s ease;
+}
+
+.tabbar .tab-btn:hover {
+  background: var(--hover);
+}
+
+.tabbar .tab-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.tabbar .tab-btn span {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.tabbar .tab-btn.active {
+  color: var(--text);
+}
+
+html[dark_mode="true"] .tabbar {
+  background: var(--surface);
+  border-top-color: var(--hover);
+}
+
+/* --- Embedded Settings View Styles --- */
+#tab-settings .settings-container {
+  width: 100%;
+  background: var(--bg);
+  position: relative;
+  padding-bottom: 56px;
+}
+
+#tab-settings h2 {
+  text-align: left;
+  margin: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#tab-settings .setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-top: 1px solid var(--hover);
+}
+
+#tab-settings .setting-item:first-of-type {
+  border-top: none;
+}
+
+#tab-settings .setting-item label {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+#tab-settings .setting-item:hover {
+  background-color: var(--surface);
+}
+
+
+
+.save-settings-row {
+  width: 100%;
+  display: block;
+  padding: 18px 0 0 0;
+  background: none;
+}
+
+
+
+
+
+.save-settings-btn {
+  margin-left: 8px;
+  padding: 6px 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  cursor: pointer;
+  opacity: 1;
+  transition: background 0.2s, opacity 0.2s;
+  display: none;
+}
+
+.save-settings-btn:disabled {
+  background: var(--muted);
+  color: #eee;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+html[dark_mode="true"] .save-settings-btn {
+  background: #3ea6ff;
+  color: #222;
+}
+
+#tab-settings .switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+#tab-settings .switch input { opacity: 0; width: 0; height: 0; }
+
+#tab-settings .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 20px;
+  transition: background-color 0.25s ease;
+}
+
+#tab-settings .slider:before {
+  position: absolute;
+  content: "";
+  height: 14px; width: 14px;
+  left: 3px; bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), background-color 0.25s ease;
+}
+
+#tab-settings input:checked + .slider { background-color: #065FD4; }
+#tab-settings input:checked + .slider:before { transform: translateX(16px); }
+
+html[dark_mode="true"] #tab-settings .setting-item { border-top-color: var(--hover); }
+html[dark_mode="true"] #tab-settings .setting-item:hover { background-color: var(--hover); }
+html[dark_mode="true"] #tab-settings .slider { background-color: #555; }
+html[dark_mode="true"] #tab-settings input:checked + .slider { background-color: #3ea6ff; }

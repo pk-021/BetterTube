@@ -213,12 +213,10 @@ let loadBookmarkButton = () => {
         // Inline SVG
         bookmarkBtn.innerHTML = `
         <svg class="bookmark-icon" viewBox="0 0 24 24" width="100%" height="100%" fill="#fff" fill-opacity="1" xmlns="http://www.w3.org/2000/svg">
-            <g transform="scale(0.6) translate(8 8)">
+            <g transform="scale(0.6) translate(-4,0)">
                 <path d="M6 4C6 3.45 6.45 3 7 3H17C17.55 3 18 3.45 18 4V21L12 17L6 21V4Z"/>
             </g>
         </svg>
-
-
         `;
 
         const youtubeRightControls = document.querySelector(".ytp-right-controls");
@@ -245,7 +243,7 @@ function saveBookMarksToStorage() {
 }
 
 function getBookmarksFromStorage(func) {
-    chrome.storage.local.get(["bookmarks"], (result) => {
+    chrome.storage.sync.get(["bookmarks"], (result) => {
         if (result.bookmarks) {
             bookmarks = result.bookmarks;
         }
@@ -400,7 +398,18 @@ function showModal() {
         function updateSaveButtonState() {
             saveBtn.disabled = !((input && input.value.trim() !== "") || (select && select.value));
         }
-        if (input) input.addEventListener("input", updateSaveButtonState);
+        if (input) {
+            input.addEventListener("input", updateSaveButtonState);
+            // Only trigger Save for this modal, not globally
+            input.addEventListener("keydown", function(e) {
+                if (e.key === "Enter" && !saveBtn.disabled) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Only click the saveBtn inside this modal
+                    saveBtn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+                }
+            });
+        }
         if (select) select.addEventListener("change", updateSaveButtonState);
         updateSaveButtonState();
 
@@ -458,18 +467,12 @@ function showModal() {
             saveBookMarksToStorage();
             
             // Show notification that bookmark was saved using overlay
-            if (window.btubeOverlay) {
-                window.btubeOverlay.showNotification('Bookmark saved successfully!', 'success');
-            } else {
-                // Fallback to background notification
-                chrome.runtime.sendMessage({
-                    type: 'showNotification',
-                    message: 'Bookmark saved successfully!',
-                    notificationType: 'success'
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        console.error('Notification error:', chrome.runtime.lastError);
-                    }
+            if (chrome && chrome.notifications) {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: 'assets/logo_v2.png',
+                    title: 'BTube',
+                    message: 'Bookmark saved successfully!'
                 });
             }
             

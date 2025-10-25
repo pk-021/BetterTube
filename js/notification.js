@@ -23,25 +23,17 @@ function getNotificationData() {
 // Show the notification
 function showNotification() {
   const { message } = getNotificationData();
-  const messageElement = document.getElementById('notification-message');
-  const container = document.getElementById('notification-container');
-  
-  if (messageElement) {
-    messageElement.textContent = message;
+  if (chrome && chrome.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'assets/logo_v2.png',
+      title: 'BTube',
+      message: message
+    });
+    setTimeout(() => {
+      window.close();
+    }, 2000);
   }
-
-  // Force focus on the notification
-  setTimeout(() => {
-    const okButton = document.getElementById('notification-ok');
-    if (okButton) {
-      okButton.focus();
-    }
-  }, 200);
-
-  // Auto-close after 5 seconds
-  setTimeout(() => {
-    closeNotification();
-  }, 5000);
 }
 
 // Close notification with animation

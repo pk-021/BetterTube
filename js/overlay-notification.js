@@ -108,30 +108,16 @@ class BTubeNotificationOverlay {
       if (progressBar) {
         progressBar.classList.add('animate');
       }
-    }, 100);
-
-    return notification;
-  }
-
-  removeNotification(id) {
-    const notificationData = this.notifications.find(n => n.id === id);
-    if (!notificationData) return;
-
-    const notification = notificationData.element;
-    
-    // Clear timer if exists
-    if (notification.dataset.timer) {
-      clearTimeout(parseInt(notification.dataset.timer));
-    }
-
-    // Trigger hide animation
-    notification.classList.remove('show');
-    notification.classList.add('hide');
-
-    // Remove from DOM after animation
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
+      // Overlay notification system replaced with Chrome notifications
+      function showNotification(message, type = 'info') {
+        if (chrome && chrome.notifications) {
+          chrome.notifications.create({
+            type: 'basic',
+            iconUrl: 'assets/logo_v2.png',
+            title: 'BTube',
+            message: message
+          });
+        }
       }
       // Remove from notifications array
       this.notifications = this.notifications.filter(n => n.id !== id);
