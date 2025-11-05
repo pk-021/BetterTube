@@ -391,8 +391,6 @@ body:not([data-loaded]) {
 }
 
 .tabbar .tab-btn svg {
-  width: 20px;
-  height: 20px;
   display: block;
 }
 
@@ -403,6 +401,7 @@ body:not([data-loaded]) {
 
 .tabbar .tab-btn.active {
   color: var(--text);
+  background: var(--hover);
 }
 
 html[dark_mode="true"] .tabbar {
