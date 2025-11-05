@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Blocked Content</title>
+  <link rel="stylesheet" href="css/add-block.css" />
+  <script src="js/add-block.js" defer></script>
+</head>
+<body>
+  <div id="add-block-popup">
+    <div class="header">
+      <h2>Add Blocked Content</h2>
+      <button id="close-btn" class="close-btn" title="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="content">
+      <div class="type-selector">
+        <label>
+          <input type="radio" name="block-type" value="website" checked />
+          <span>Website</span>
+        </label>
+        <label>
+          <input type="radio" name="block-type" value="channel" />
+          <span>Channel</span>
+        </label>
+      </div>
+
+      <div class="input-section">
+        <div id="website-input" class="input-group">
+          <label for="website-url">Website URL</label>
+          <input 
+            type="text" 
+            id="website-url" 
+            placeholder="e.g., youtube.com/watch?v=..." 
+            autocomplete="off"
+          />
+          <small>Enter the full URL or domain you want to block</small>
+        </div>
+
+        <div id="channel-input" class="input-group" hidden>
+          <label for="channel-name">Channel Name or ID</label>
+          <input 
+            type="text" 
+            id="channel-name" 
+            placeholder="e.g., @channelname or UCxxxxxxx" 
+            autocomplete="off"
+          />
+          <small>Enter the channel handle (@name) or channel ID</small>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="cancel-btn" class="btn-secondary">Cancel</button>
+        <button id="save-btn" class="btn-primary">Add Block</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

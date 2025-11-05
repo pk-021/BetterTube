@@ -51,13 +51,24 @@ const shortsRedirectRules = [
 // --- Rule management ---
 async function updateRedirectRules(rulesToAdd, rulesToRemove) {
   try {
+    console.group('[DNR] updateRedirectRules');
+    console.log('About to update dynamic rules', {
+      addCount: rulesToAdd?.length || 0,
+      removeCount: rulesToRemove?.length || 0,
+      removeRuleIds: rulesToRemove
+    });
     await chrome.declarativeNetRequest.updateDynamicRules({
       addRules: rulesToAdd,
       removeRuleIds: rulesToRemove
     });
-    console.log("Redirect rules updated");
+    // Verify the applied rules
+    const allRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const ids = allRules.map(r => r.id).sort((a,b)=>a-b);
+    console.log('Dynamic rules now installed:', { count: allRules.length, ids });
+    console.groupEnd();
   } catch (err) {
-    console.error("Failed to update redirect rules:", err);
+    console.groupEnd();
+    console.error("[DNR] Failed to update redirect rules:", err);
   }
 }
 
@@ -76,6 +87,112 @@ function enableShortsRedirects() {
 function disableShortsRedirects() {
   updateRedirectRules([], shortsRedirectRules.map(r => r.id));
 }
+
+// ===== Dynamic rules for user-blocked websites =====
+const BLOCK_RULE_BASE_ID = 1000; // Reserve IDs >= 1000 for blocked website rules
+
+// Escape a string for safe use inside a regex
+function escapeForRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Build declarativeNetRequest rules from the blockedWebsites array
+function buildBlockedWebsiteRules(blockedWebsites) {
+  let nextId = BLOCK_RULE_BASE_ID;
+  const rules = [];
+
+  (blockedWebsites || []).forEach(entry => {
+    if (!entry || !entry.url) return;
+    const raw = String(entry.url).trim().toLowerCase();
+    if (!raw) return;
+
+    let regexFilter = null;
+
+    if (raw.includes('/')) {
+      // Full host + path entry (we preserved TLDs when a path exists)
+      const [hostPart, ...pathParts] = raw.split('/');
+      const hostEsc = escapeForRegex(hostPart);
+      const pathEsc = escapeForRegex(pathParts.join('/'));
+      // Match any subdomain of hostPart and the specific path (ignore query/hash)
+      regexFilter = `^https?:\\/\\/(?:[a-z0-9-]+\\.)*${hostEsc}\\/${pathEsc}(?:[?#].*)?$`;
+    } else {
+      // Core domain only (no TLD) – match any TLD but require a label boundary
+      const core = escapeForRegex(raw);
+      // Ensure there's a dot right after the core label, so 'notcore.com' won't match
+      regexFilter = `^https?:\\/\\/(?:[a-z0-9-]+\\.)*${core}\\.[a-z0-9.-]+(?:[\\/?#]|$)`;
+    }
+
+    try {
+      rules.push({
+        id: nextId++,
+        priority: 1,
+        action: { type: 'redirect', redirect: { url: 'https://www.google.com/' } },
+        condition: {
+          regexFilter,
+          resourceTypes: ['main_frame']
+        }
+      });
+    } catch (e) {
+      // Skip invalid rule
+      console.warn('Skipping invalid blocked website rule for', raw, e);
+    }
+  });
+
+  return rules;
+}
+
+async function applyBlockedWebsiteRules(blockedWebsites) {
+  console.group('[Blocks] Applying blocked website rules');
+  console.log('Blocked websites input:', blockedWebsites);
+  const rules = buildBlockedWebsiteRules(blockedWebsites);
+
+  // Fetch previous rule ids from storage (so we can remove them)
+  const prev = await chrome.storage.local.get(['btube_block_rule_ids']);
+  const toRemove = Array.isArray(prev.btube_block_rule_ids) ? prev.btube_block_rule_ids : [];
+  const toAdd = rules;
+
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      addRules: toAdd,
+      removeRuleIds: toRemove
+    });
+    await chrome.storage.local.set({ btube_block_rule_ids: toAdd.map(r => r.id) });
+    console.log(`Applied ${toAdd.length} blocked-website redirect rules`, {
+      removedIds: toRemove,
+      addedIds: toAdd.map(r => r.id),
+      samples: toAdd.slice(0, 3).map(r => ({ id: r.id, regex: r.condition.regexFilter }))
+    });
+
+    // Verify install status and specifically our block rules range
+    const allRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const blockRange = allRules.filter(r => r.id >= BLOCK_RULE_BASE_ID);
+    console.log('Verification: dynamic rules count', allRules.length, 'blocked-range count', blockRange.length);
+    console.groupEnd();
+  } catch (err) {
+    console.groupEnd();
+    console.error('[Blocks] Failed updating blocked website rules:', err);
+  }
+}
+
+// Initialize blocked website rules on startup
+chrome.storage.local.get(['blockedWebsites'], (res) => {
+  const list = res.blockedWebsites || [];
+  console.log('[Startup] Initializing blocked website rules with', list.length, 'entries');
+  applyBlockedWebsiteRules(list);
+});
+
+// Rebuild rules whenever the blocked list changes
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'local') return;
+  if (changes.blockedWebsites) {
+    const list = changes.blockedWebsites.newValue || [];
+    console.log('[Storage] blockedWebsites changed:', {
+      oldLen: (changes.blockedWebsites.oldValue || []).length,
+      newLen: list.length
+    });
+    applyBlockedWebsiteRules(list);
+  }
+});
 
 // --- Notification system ---
 function showOverlayNotification(message, type = 'info') {

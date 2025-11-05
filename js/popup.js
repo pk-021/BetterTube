@@ -218,6 +218,8 @@ window.addEventListener("DOMContentLoaded", () => {
         settings: document.getElementById('tab-settings'),
         blocking: document.getElementById('tab-blocking')
     };
+    const addBlockBtn = document.getElementById('add-block-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
 
     tabButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -245,11 +247,25 @@ window.addEventListener("DOMContentLoaded", () => {
                 el.classList.toggle('active', show);
                 el.hidden = !show;
             });
+
+            // Show/hide add block button based on active tab
+            if (addBlockBtn) {
+                addBlockBtn.style.display = tab === 'blocking' ? 'flex' : 'none';
+            }
+
+            // Show/hide save settings button based on active tab
+            // (save button visibility is controlled by settings changes, but ensure it's hidden on other tabs)
+            if (saveSettingsBtn && tab !== 'settings') {
+                saveSettingsBtn.style.display = 'none';
+            }
         });
     });
 
     // Initialize Settings toggles if present
     initSettingsToggles();
+
+    // Initialize Blocking tab functionality
+    initBlockingTab();
 });
 
 
@@ -321,5 +337,396 @@ function initSettingsToggles() {
                 window.location.href = 'login.html?from=settings';
             });
         });
+    }
+}
+
+// --- Blocking Tab Functionality ---
+function initBlockingTab() {
+    const addBlockBtn = document.getElementById('add-block-btn');
+    const overlay = document.getElementById('add-block-overlay');
+    const closeOverlayBtn = document.getElementById('close-overlay-btn');
+    const cancelOverlayBtn = document.getElementById('cancel-overlay-btn');
+    const saveOverlayBtn = document.getElementById('save-overlay-btn');
+    const typeRadios = document.querySelectorAll('input[name="block-type"]');
+    const websiteInput = document.getElementById('website-input');
+    const channelInput = document.getElementById('channel-input');
+    const websiteUrlField = document.getElementById('website-url');
+    const channelNameField = document.getElementById('channel-name');
+    
+    // Load blocked content when popup opens
+    loadBlockedContent();
+
+    // Listen for storage changes to update the lists in real-time
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local') {
+            if (changes.blockedWebsites || changes.blockedChannels) {
+                loadBlockedContent();
+            }
+        }
+    });
+
+    // Add block button - shows overlay
+    if (addBlockBtn) {
+        addBlockBtn.addEventListener('click', () => {
+            overlay.hidden = false;
+            websiteUrlField.focus();
+        });
+    }
+
+    // Handle type selection change
+    typeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'website') {
+                websiteInput.hidden = false;
+                channelInput.hidden = true;
+                websiteUrlField.focus();
+            } else {
+                websiteInput.hidden = true;
+                channelInput.hidden = false;
+                channelNameField.focus();
+            }
+        });
+    });
+
+    // Close overlay handlers
+    const closeOverlay = () => {
+        overlay.hidden = true;
+        websiteUrlField.value = '';
+        channelNameField.value = '';
+        document.querySelector('input[name="block-type"][value="website"]').checked = true;
+        websiteInput.hidden = false;
+        channelInput.hidden = true;
+    };
+
+    if (closeOverlayBtn) {
+        closeOverlayBtn.addEventListener('click', closeOverlay);
+    }
+
+    if (cancelOverlayBtn) {
+        cancelOverlayBtn.addEventListener('click', closeOverlay);
+    }
+
+    // Save blocked content
+    if (saveOverlayBtn) {
+        saveOverlayBtn.addEventListener('click', async () => {
+            const blockType = document.querySelector('input[name="block-type"]:checked').value;
+            
+            if (blockType === 'website') {
+                const url = websiteUrlField.value.trim();
+                if (!url) {
+                    alert('Please enter a website URL');
+                    return;
+                }
+                await addBlockedWebsite(url);
+            } else {
+                const channelName = channelNameField.value.trim();
+                if (!channelName) {
+                    alert('Please enter a channel name or ID');
+                    return;
+                }
+                await addBlockedChannel(channelName);
+            }
+
+            closeOverlay();
+        });
+    }
+
+    // Handle Escape key to close overlay
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.hidden) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeOverlay();
+        }
+    });
+
+    // Handle Enter key in input fields
+    if (websiteUrlField) {
+        websiteUrlField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveOverlayBtn.click();
+            }
+        });
+    }
+
+    if (channelNameField) {
+        channelNameField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveOverlayBtn.click();
+            }
+        });
+    }
+
+    // Close overlay when clicking outside
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeOverlay();
+            }
+        });
+    }
+}
+
+// Add blocked website
+async function addBlockedWebsite(url) {
+    try {
+        // Process and extract essential part of URL
+        let processedUrl = url.trim();
+        
+        // Remove protocol if present
+        processedUrl = processedUrl.replace(/^https?:\/\//i, '');
+        
+        // Remove www. if present
+        processedUrl = processedUrl.replace(/^www\./i, '');
+        
+        // Remove trailing slashes
+        processedUrl = processedUrl.replace(/\/+$/, '');
+        
+        // Extract video ID if it's a YouTube video URL
+        // Handles: youtube.com/watch?v=VIDEO_ID, youtu.be/VIDEO_ID, youtube.com/embed/VIDEO_ID
+        const videoIdMatch = processedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+        if (videoIdMatch) {
+            // For YouTube videos, keep the full format
+            processedUrl = `youtube.com/watch?v=${videoIdMatch[1]}`;
+        } else {
+            // Extract domain and path (remove query params and fragments for general URLs)
+            processedUrl = processedUrl.split('?')[0].split('#')[0];
+            
+            // Remove domain extensions (.com, .org, .net, etc.) unless it's a path
+            if (!processedUrl.includes('/')) {
+                // Only remove extension if it's just a domain (no path)
+                processedUrl = processedUrl.replace(/\.(com|org|net|edu|gov|co|io|ai|me|tv|info|biz|dev|app|tech|online|site|xyz|store|shop|blog|news|pro|cloud|digital|web|us|uk|ca|au|de|fr|jp|in|br|ru|cn|kr|es|it|nl|se|pl|tr|mx|za|id|th|my|sg|ph|vn|tw|hk|nz|ar|cl|pe|eg|pk|bd|ng|ke|ua|ro|cz|gr|pt|be|hu|at|ch|dk|fi|no|ie|il|sa|ae|qa|kw|om|bh|lb|jo|iq|sy|ye|ly|tn|ma|dz|sd|so|et|ug|tz|gh|sn|ci|cm|bw|zm|zw|mw|mg|mu|re|mz|ao|na|ls|sz|gm|gn|gw|sl|lr|ml|bf|ne|td|cf|ga|cg|cd|rw|bi|dj|er|ss|st|cv|sc|km|mr|eh)$/i, '');
+            }
+        }
+
+        if (!processedUrl) {
+            alert('Please enter a valid URL');
+            return;
+        }
+
+        // Get existing blocked websites
+        const result = await chrome.storage.local.get(['blockedWebsites']);
+        const blockedWebsites = result.blockedWebsites || [];
+
+        // Check if already blocked (case-insensitive)
+        if (blockedWebsites.some(item => item.url.toLowerCase() === processedUrl.toLowerCase())) {
+            alert('This website is already blocked');
+            return;
+        }
+
+        // Add new blocked website
+        blockedWebsites.push({
+            url: processedUrl,
+            addedAt: Date.now()
+        });
+
+        // Save to storage
+        await chrome.storage.local.set({ blockedWebsites });
+        
+        console.log('Website blocked:', processedUrl);
+    } catch (error) {
+        console.error('Error adding blocked website:', error);
+        alert('Failed to block website. Please try again.');
+    }
+}
+
+// Add blocked channel
+async function addBlockedChannel(channelName) {
+    try {
+        // Process and extract essential part of channel
+        let processedChannel = channelName.trim();
+        
+        // Handle full YouTube URLs
+        // Formats: youtube.com/@channelname, youtube.com/channel/UCxxxx, youtube.com/c/channelname
+        if (processedChannel.includes('youtube.com') || processedChannel.includes('youtu.be')) {
+            // Remove protocol and domain
+            processedChannel = processedChannel.replace(/^https?:\/\//i, '');
+            processedChannel = processedChannel.replace(/^(www\.)?youtube\.com\//i, '');
+            
+            // Extract channel handle (@name)
+            const handleMatch = processedChannel.match(/@([a-zA-Z0-9_.-]+)/);
+            if (handleMatch) {
+                processedChannel = '@' + handleMatch[1];
+            } 
+            // Extract channel ID (UC...)
+            else if (processedChannel.startsWith('channel/')) {
+                const channelId = processedChannel.replace('channel/', '').split('/')[0].split('?')[0];
+                processedChannel = channelId;
+            }
+            // Extract custom channel name (/c/...)
+            else if (processedChannel.startsWith('c/')) {
+                const customName = processedChannel.replace('c/', '').split('/')[0].split('?')[0];
+                processedChannel = customName;
+            }
+            // Extract user name (/user/...)
+            else if (processedChannel.startsWith('user/')) {
+                const userName = processedChannel.replace('user/', '').split('/')[0].split('?')[0];
+                processedChannel = userName;
+            }
+        }
+        // If it already starts with @, keep it as is
+        else if (!processedChannel.startsWith('@') && !processedChannel.startsWith('UC')) {
+            // Assume it's a handle without @ prefix, add it
+            processedChannel = '@' + processedChannel;
+        }
+        
+        // Remove any remaining query params or fragments
+        processedChannel = processedChannel.split('?')[0].split('#')[0];
+
+        if (!processedChannel || processedChannel === '@') {
+            alert('Please enter a valid channel name or ID');
+            return;
+        }
+
+        // Get existing blocked channels
+        const result = await chrome.storage.local.get(['blockedChannels']);
+        const blockedChannels = result.blockedChannels || [];
+
+        // Check if already blocked (case-insensitive)
+        if (blockedChannels.some(item => item.name.toLowerCase() === processedChannel.toLowerCase())) {
+            alert('This channel is already blocked');
+            return;
+        }
+
+        // Add new blocked channel
+        blockedChannels.push({
+            name: processedChannel,
+            addedAt: Date.now()
+        });
+
+        // Save to storage
+        await chrome.storage.local.set({ blockedChannels });
+        
+        console.log('Channel blocked:', processedChannel);
+    } catch (error) {
+        console.error('Error adding blocked channel:', error);
+        alert('Failed to block channel. Please try again.');
+    }
+}
+
+// Load and display blocked websites and channels
+async function loadBlockedContent() {
+    try {
+        const result = await chrome.storage.local.get(['blockedWebsites', 'blockedChannels']);
+        
+        const blockedWebsites = result.blockedWebsites || [];
+        const blockedChannels = result.blockedChannels || [];
+
+        // Render blocked websites
+        renderBlockedWebsites(blockedWebsites);
+        
+        // Render blocked channels
+        renderBlockedChannels(blockedChannels);
+    } catch (error) {
+        console.error('Error loading blocked content:', error);
+    }
+}
+
+// Render blocked websites list
+function renderBlockedWebsites(websites) {
+    const listContainer = document.getElementById('blocked-websites-list');
+    const emptyMessage = document.getElementById('empty-websites');
+    
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+
+    if (websites.length === 0) {
+        emptyMessage.hidden = false;
+        return;
+    }
+
+    emptyMessage.hidden = true;
+
+    websites.forEach((website, index) => {
+        const item = createBlockedItem(website.url, () => {
+            deleteBlockedWebsite(index);
+        });
+        listContainer.appendChild(item);
+    });
+}
+
+// Render blocked channels list
+function renderBlockedChannels(channels) {
+    const listContainer = document.getElementById('blocked-channels-list');
+    const emptyMessage = document.getElementById('empty-channels');
+    
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+
+    if (channels.length === 0) {
+        emptyMessage.hidden = false;
+        return;
+    }
+
+    emptyMessage.hidden = true;
+
+    channels.forEach((channel, index) => {
+        const item = createBlockedItem(channel.name, () => {
+            deleteBlockedChannel(index);
+        });
+        listContainer.appendChild(item);
+    });
+}
+
+// Create a blocked item element
+function createBlockedItem(title, onDelete) {
+    const item = document.createElement('div');
+    item.className = 'blocked-item';
+
+    const content = document.createElement('div');
+    content.className = 'blocked-item-content';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'blocked-item-title';
+    titleEl.textContent = title;
+    titleEl.title = title; // Show full text on hover
+
+    content.appendChild(titleEl);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-block-btn';
+    deleteBtn.title = 'Delete';
+    deleteBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    `;
+    deleteBtn.addEventListener('click', onDelete);
+
+    item.appendChild(content);
+    item.appendChild(deleteBtn);
+
+    return item;
+}
+
+// Delete blocked website
+async function deleteBlockedWebsite(index) {
+    try {
+        const result = await chrome.storage.local.get(['blockedWebsites']);
+        const blockedWebsites = result.blockedWebsites || [];
+        
+        blockedWebsites.splice(index, 1);
+        
+        await chrome.storage.local.set({ blockedWebsites });
+        console.log('Website unblocked');
+    } catch (error) {
+        console.error('Error deleting blocked website:', error);
+    }
+}
+
+// Delete blocked channel
+async function deleteBlockedChannel(index) {
+    try {
+        const result = await chrome.storage.local.get(['blockedChannels']);
+        const blockedChannels = result.blockedChannels || [];
+        
+        blockedChannels.splice(index, 1);
+        
+        await chrome.storage.local.set({ blockedChannels });
+        console.log('Channel unblocked');
+    } catch (error) {
+        console.error('Error deleting blocked channel:', error);
     }
 }

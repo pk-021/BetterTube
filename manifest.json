@@ -17,7 +17,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*"
+    "<all_urls>"
   ],
   "declarative_net_request": {
     "rule_resources": [
