@@ -7,6 +7,7 @@
   --primary: #ff0000;
   --primary-hover: #cc0000;
   --danger: #d32f2f;
+  --footer-h: 56px;
   --radius: 12px;
 }
 
@@ -116,7 +117,7 @@ body {
 .lists {
   min-height: 200px;
   padding: 16px;
-  padding-bottom: 16px;
+  padding-bottom: calc(var(--footer-h) + 16px);
 }
 
 /* Folder list */
@@ -424,7 +425,7 @@ html[dark_mode="true"] .tabbar {
   width: 100%;
   background: var(--bg);
   position: relative;
-  padding: 0;
+  padding: 0 0 calc(var(--footer-h) + 16px) 0;
 }
 
 #tab-settings h2 {
@@ -563,7 +564,7 @@ html[dark_mode="true"] #tab-settings input:checked + .slider { background-color:
 /* Blocking tab styles */
 .blocking-container {
   padding: 16px;
-  padding-bottom: 16px;
+  padding-bottom: calc(var(--footer-h) + 16px);
 }
 
 .blocked-section {
