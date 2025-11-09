@@ -5,7 +5,10 @@
   --surface: #f8f8f8;
   --hover: rgba(0, 0, 0, 0.05);
   --primary: #ff0000;
+  --primary-rgb: 255, 0, 0;
   --primary-hover: #cc0000;
+  --active-mode: #065fd4;
+  --active-mode-rgb: 6, 95, 212;
   --danger: #d32f2f;
   --footer-h: 56px;
   --radius: 12px;
@@ -295,7 +298,10 @@ html[dark_mode="true"] {
   --surface: #242424;
   --hover: rgba(255, 255, 255, 0.08);
   --primary: #ff0000;
+  --primary-rgb: 255, 0, 0;
   --primary-hover: #ff3333;
+  --active-mode: #3ea6ff;
+  --active-mode-rgb: 62, 166, 255;
   --danger: #f44336;
 }
 
@@ -421,19 +427,179 @@ html[dark_mode="true"] .tabbar {
 }
 
 /* --- Embedded Settings View Styles --- */
-#tab-settings .settings-container {
+.settings-mode-view,
+.settings-custom-view {
   width: 100%;
   background: var(--bg);
   position: relative;
   padding: 0 0 calc(var(--footer-h) + 16px) 0;
 }
 
-#tab-settings h2 {
+.settings-mode-view h2,
+.custom-settings-header h2 {
   text-align: left;
   margin: 16px;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--text);
+}
+
+/* Mode Selector Grid */
+.mode-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.mode-option {
+  cursor: pointer;
+  position: relative;
+  display: block;
+}
+
+.mode-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.mode-card {
+  background: var(--surface);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 20px 16px;
+  text-align: center;
+  transition: all 0.2s;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-option:hover .mode-card {
+  background: var(--hover);
+  border-color: var(--hover);
+}
+
+/* Currently selected mode (via radio button) */
+.mode-option input[type="radio"]:checked + .mode-card {
+  background: var(--surface);
+  border-color: var(--active-mode);
+}
+
+/* Currently active/applied mode */
+.mode-option.mode-active .mode-card {
+  background: rgba(var(--active-mode-rgb), 0.08);
+  border-color: var(--active-mode);
+}
+
+/* When a mode is both selected and active */
+.mode-option.mode-active input[type="radio"]:checked + .mode-card {
+  background: rgba(var(--active-mode-rgb), 0.12);
+  border-color: var(--active-mode);
+  box-shadow: 0 0 0 3px rgba(var(--active-mode-rgb), 0.15);
+}
+
+/* Custom mode option container */
+.mode-custom {
+  position: relative;
+}
+
+.mode-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.mode-desc {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* Edit button in Custom card */
+.edit-custom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: var(--active-mode);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  width: calc(100% - 16px);
+}
+
+.edit-custom-btn[hidden] {
+  display: none;
+}
+
+.edit-custom-btn:hover {
+  background: #0448a0;
+  transform: translateY(-1px);
+}
+
+html[dark_mode="true"] .edit-custom-btn:hover {
+  background: #2a8ede;
+}
+
+.edit-custom-btn svg {
+  flex-shrink: 0;
+}
+
+/* Custom Settings Editor View */
+.settings-custom-view[hidden] {
+  display: none;
+}
+
+.custom-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--hover);
+}
+
+.custom-settings-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: var(--hover);
+}
+
+.custom-settings-list {
+  padding: 0;
 }
 
 #tab-settings .setting-item {
@@ -445,7 +611,7 @@ html[dark_mode="true"] .tabbar {
   border-top: 1px solid var(--hover);
 }
 
-#tab-settings .setting-item:first-of-type {
+.custom-settings-list .setting-item:first-of-type {
   border-top: none;
 }
 

@@ -277,15 +277,101 @@ const settingsMap = {
     "minimal-homepage": "minimal_homepage"
 };
 
+// Mode presets
+const modePresets = {
+    "off": {
+        BTubeOn: false,
+        redirect_home: false,
+        hide_shorts: false,
+        minimal_homepage: false
+    },
+    "minimal": {
+        BTubeOn: true,
+        redirect_home: false,
+        hide_shorts: true,
+        minimal_homepage: true
+    },
+    "high-focus": {
+        BTubeOn: true,
+        redirect_home: true,
+        hide_shorts: true,
+        minimal_homepage: true
+    }
+};
+
+// Strictness levels (higher number = stricter)
+const strictnessLevels = {
+    "off": 0,
+    "minimal": 1,
+    "high-focus": 2,
+    "custom": -1 // Custom is not part of the strictness hierarchy
+};
+
 function initSettingsToggles() {
     const present = Object.keys(settingsMap).some(id => document.getElementById(id));
     if (!present) return; // settings view not rendered
 
     const saveBtn = document.getElementById('save-settings-btn');
+    const modeView = document.querySelector('.settings-mode-view');
+    const customView = document.querySelector('.settings-custom-view');
+    const editCustomBtn = document.getElementById('edit-custom-btn');
+    const backToModesBtn = document.getElementById('back-to-modes-btn');
+    const modeRadios = document.querySelectorAll('input[name="settings-mode"]');
+    const customRadio = document.getElementById('custom-mode-radio');
+    
     let initialValues = {};
+    let initialMode = 'custom';
     let changed = false;
 
-    // Load initial values
+    // Navigate to custom settings editor
+    function showCustomEditor() {
+        modeView.hidden = true;
+        customView.hidden = false;
+    }
+
+    // Navigate back to mode selector
+    function showModeSelector() {
+        modeView.hidden = false;
+        customView.hidden = true;
+    }
+
+    // Determine current mode from stored settings
+    function detectMode(settings) {
+        for (const [modeName, preset] of Object.entries(modePresets)) {
+            const matches = Object.keys(preset).every(key => settings[key] === preset[key]);
+            if (matches) return modeName;
+        }
+        return 'custom';
+    }
+
+    // Apply mode preset to checkboxes
+    function applyModeToCheckboxes(mode) {
+        const preset = modePresets[mode];
+        if (!preset) return;
+
+        Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+            const checkbox = document.getElementById(checkboxId);
+            if (checkbox && storageKey in preset) {
+                checkbox.checked = preset[storageKey];
+            }
+        });
+    }
+
+    // Mark the currently active mode with a visual indicator
+    function markActiveMode(mode) {
+        // Remove active class from all mode options
+        document.querySelectorAll('.mode-option').forEach(option => {
+            option.classList.remove('mode-active');
+        });
+        
+        // Add active class to the current mode
+        const activeOption = document.querySelector(`input[name="settings-mode"][value="${mode}"]`)?.closest('.mode-option');
+        if (activeOption) {
+            activeOption.classList.add('mode-active');
+        }
+    }
+
+    // Load initial values and detect mode
     chrome.storage.local.get(Object.values(settingsMap), (result) => {
         initialValues = {};
         for (const [checkboxId, storageKey] of Object.entries(settingsMap)) {
@@ -294,6 +380,21 @@ function initSettingsToggles() {
             checkbox.checked = !!result[storageKey];
             initialValues[checkboxId] = !!result[storageKey];
         }
+
+        // Detect and set current mode
+        initialMode = detectMode(result);
+        const modeRadio = document.querySelector(`input[name="settings-mode"][value="${initialMode}"]`);
+        if (modeRadio) {
+            modeRadio.checked = true;
+            // Show edit button if custom mode is initially selected
+            if (initialMode === 'custom' && editCustomBtn) {
+                editCustomBtn.hidden = false;
+            }
+        }
+        
+        // Mark the active mode
+        markActiveMode(initialMode);
+
         changed = false;
         if (saveBtn) {
             saveBtn.disabled = true;
@@ -301,16 +402,109 @@ function initSettingsToggles() {
         }
     });
 
-    // Track changes
+    // Listen for storage changes to update active mode indicator
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local') {
+            // Check if any settings that affect mode detection changed
+            const relevantKeys = Object.values(settingsMap);
+            const hasRelevantChanges = relevantKeys.some(key => key in changes);
+            
+            if (hasRelevantChanges) {
+                // Re-detect the active mode
+                chrome.storage.local.get(relevantKeys, (result) => {
+                    const newMode = detectMode(result);
+                    markActiveMode(newMode);
+                    
+                    // Update initial mode if different
+                    if (newMode !== initialMode) {
+                        initialMode = newMode;
+                        
+                        // Update initial values
+                        Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                            const checkbox = document.getElementById(checkboxId);
+                            if (checkbox && storageKey in result) {
+                                checkbox.checked = !!result[storageKey];
+                                initialValues[checkboxId] = !!result[storageKey];
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    });
+
+    // Handle edit button click
+    if (editCustomBtn) {
+        editCustomBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Select custom mode if not already selected
+            if (customRadio && !customRadio.checked) {
+                customRadio.checked = true;
+                changed = true;
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.style.display = 'inline-flex';
+                }
+            }
+            
+            showCustomEditor();
+        });
+    }
+
+    // Handle back button
+    if (backToModesBtn) {
+        backToModesBtn.addEventListener('click', () => {
+            showModeSelector();
+        });
+    }
+
+    // Handle mode radio changes
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const selectedMode = e.target.value;
+            
+            // Show/hide edit button based on mode
+            if (editCustomBtn) {
+                editCustomBtn.hidden = selectedMode !== 'custom';
+            }
+            
+            // Apply preset to checkboxes if not custom
+            if (selectedMode !== 'custom') {
+                applyModeToCheckboxes(selectedMode);
+            }
+            
+            // Mark as changed if different from initial
+            changed = selectedMode !== initialMode;
+            
+            if (saveBtn) {
+                saveBtn.disabled = !changed;
+                saveBtn.style.display = changed ? 'inline-flex' : 'none';
+            }
+        });
+    });
+
+    // Track changes in custom toggles
     Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
         const checkbox = document.getElementById(checkboxId);
         if (!checkbox) return;
         checkbox.addEventListener("change", () => {
-            // If any value differs from initial, enable button and show it
+            // When custom toggles change, switch to custom mode
+            if (customRadio && !customRadio.checked) {
+                customRadio.checked = true;
+                // Show edit button when switching to custom mode
+                if (editCustomBtn) {
+                    editCustomBtn.hidden = false;
+                }
+            }
+
+            // Check if any value differs from initial
             changed = Object.entries(settingsMap).some(([id]) => {
                 const cb = document.getElementById(id);
                 return cb && cb.checked !== initialValues[id];
             });
+            
             if (saveBtn) {
                 saveBtn.disabled = !changed;
                 saveBtn.style.display = changed ? 'inline-flex' : 'none';
@@ -324,18 +518,65 @@ function initSettingsToggles() {
             const settingsTab = document.getElementById('tab-settings');
             if (!settingsTab.classList.contains('active')) return;
 
-            // Store pending settings in local storage
+            // Get selected mode
+            const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
+            
+            // Determine if login is required
+            const isCustomMode = selectedMode === 'custom';
+            const isStricterSetting = !isCustomMode && 
+                                     strictnessLevels[selectedMode] > strictnessLevels[initialMode];
+            const requiresLogin = isCustomMode || !isStricterSetting;
+            
+            // Build settings object
             let newValues = {};
-            Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
-                const checkbox = document.getElementById(checkboxId);
-                if (checkbox) {
-                    newValues[storageKey] = checkbox.checked;
-                }
-            });
-            chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
-                // Navigate popup to login.html
-                window.location.href = 'login.html?from=settings';
-            });
+            
+            if (selectedMode && selectedMode !== 'custom' && modePresets[selectedMode]) {
+                // Use preset values
+                newValues = { ...modePresets[selectedMode] };
+            } else {
+                // Use custom toggle values
+                Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox) {
+                        newValues[storageKey] = checkbox.checked;
+                    }
+                });
+            }
+
+            if (requiresLogin) {
+                // Store pending settings and require login
+                chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
+                    // Navigate popup to login.html
+                    window.location.href = 'login.html?from=settings';
+                });
+            } else {
+                // Apply settings directly without login for stricter presets
+                chrome.storage.local.set(newValues, () => {
+                    // Show success notification
+                    chrome.runtime.sendMessage({
+                        type: 'showNotification',
+                        message: 'Settings saved successfully!',
+                        notificationType: 'success'
+                    });
+                    
+                    // Update initial values and mode
+                    initialMode = selectedMode;
+                    Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                        const checkbox = document.getElementById(checkboxId);
+                        if (checkbox) {
+                            initialValues[checkboxId] = checkbox.checked;
+                        }
+                    });
+                    
+                    // Update active mode indicator
+                    markActiveMode(selectedMode);
+                    
+                    // Hide save button
+                    changed = false;
+                    saveBtn.disabled = true;
+                    saveBtn.style.display = 'none';
+                });
+            }
         });
     }
 }

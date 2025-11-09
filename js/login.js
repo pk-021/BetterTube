@@ -129,18 +129,17 @@ async function checkPassword() {
       if (data.btube_pending_settings) {
           chrome.storage.local.set(data.btube_pending_settings, () => {
             chrome.storage.local.remove('btube_pending_settings');
-            // Use Chrome's built-in notification
-            if (chrome && chrome.notifications) {
-              chrome.notifications.create({
-                type: 'basic',
-                iconUrl: 'assets/logo_v2.png',
-                title: 'BTube',
-                message: 'Settings changes saved after login.'
-              });
-            }
+            
+            // Show success notification
+            chrome.runtime.sendMessage({
+              type: 'showNotification',
+              message: 'Settings saved successfully!',
+              notificationType: 'success'
+            });
+            
             setTimeout(() => {
               window.location.href = "popup.html";
-            }, 800);
+            }, 500);
           });
       } else {
         window.location.href = "settings.html";

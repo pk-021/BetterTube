@@ -196,14 +196,34 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // --- Notification system ---
 function showOverlayNotification(message, type = 'info') {
-  if (chrome && chrome.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'assets/logo_v2.png',
-      title: 'BTube',
-      message: message
-    });
-  }
+  return new Promise((resolve, reject) => {
+    if (chrome && chrome.notifications) {
+      // Use chrome.runtime.getURL to get the proper path to local assets
+      const iconUrl = chrome.runtime.getURL('assets/logo_v2.png');
+      
+      chrome.notifications.create(
+        '', // Empty string to auto-generate notification ID
+        {
+          type: 'basic',
+          iconUrl: iconUrl,
+          title: 'BetterTube',
+          message: message,
+          priority: 2
+        },
+        (notificationId) => {
+          if (chrome.runtime.lastError) {
+            console.error('Notification error:', chrome.runtime.lastError);
+            reject(chrome.runtime.lastError);
+          } else {
+            console.log('Notification created with ID:', notificationId);
+            resolve(notificationId);
+          }
+        }
+      );
+    } else {
+      reject(new Error('Notifications API not available'));
+    }
+  });
 }
 
 
@@ -220,14 +240,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   } else if (msg.type === "showNotification") {
     console.log('Processing notification request:', msg.message);
     // Handle async overlay notification
-  showOverlayNotification(msg.message, msg.notificationType || 'info')
-      .then(() => {
-        console.log('Notification sent successfully');
-        sendResponse({ success: true });
+    showOverlayNotification(msg.message, msg.notificationType || 'info')
+      .then((notificationId) => {
+        console.log('Notification sent successfully with ID:', notificationId);
+        sendResponse({ success: true, notificationId });
       })
       .catch((error) => {
         console.error('Notification error:', error);
-        sendResponse({ success: false, error: error.message });
+        sendResponse({ success: false, error: error.message || String(error) });
       });
     return true; // Keep message channel open for async response
   } else if (msg.type === "checkOverlay") {
