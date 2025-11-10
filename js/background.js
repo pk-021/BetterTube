@@ -8,7 +8,9 @@ const defaultSettings = {
   hide_feed: true,
   redirect_home: false,
   hide_shorts: true,
-  BTubeOn: true
+  BTubeOn: true,
+  enable_website_blocking: false,
+  enable_channel_blocking: false
 };
 
 // --- Initialize settings (set defaults if none exist) ---
@@ -144,6 +146,30 @@ function buildBlockedWebsiteRules(blockedWebsites) {
 async function applyBlockedWebsiteRules(blockedWebsites) {
   console.group('[Blocks] Applying blocked website rules');
   console.log('Blocked websites input:', blockedWebsites);
+  
+  // Check if website blocking is enabled
+  const settings = await chrome.storage.local.get(['enable_website_blocking']);
+  const isEnabled = settings.enable_website_blocking !== false; // Default to true if not set for backward compatibility
+  
+  console.log('Website blocking enabled:', isEnabled);
+  
+  // If disabled, remove all blocking rules
+  if (!isEnabled) {
+    const prev = await chrome.storage.local.get(['btube_block_rule_ids']);
+    const toRemove = Array.isArray(prev.btube_block_rule_ids) ? prev.btube_block_rule_ids : [];
+    
+    if (toRemove.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        addRules: [],
+        removeRuleIds: toRemove
+      });
+      await chrome.storage.local.set({ btube_block_rule_ids: [] });
+      console.log('Website blocking disabled - removed', toRemove.length, 'rules');
+    }
+    console.groupEnd();
+    return;
+  }
+  
   const rules = buildBlockedWebsiteRules(blockedWebsites);
 
   // Fetch previous rule ids from storage (so we can remove them)
@@ -191,6 +217,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
       newLen: list.length
     });
     applyBlockedWebsiteRules(list);
+  }
+  // Also re-apply rules when the enable_website_blocking setting changes
+  if (changes.enable_website_blocking) {
+    console.log('[Storage] enable_website_blocking changed:', changes.enable_website_blocking.newValue);
+    chrome.storage.local.get(['blockedWebsites'], (res) => {
+      const list = res.blockedWebsites || [];
+      applyBlockedWebsiteRules(list);
+    });
   }
 });
 

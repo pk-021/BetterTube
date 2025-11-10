@@ -274,7 +274,9 @@ const settingsMap = {
     "extension-online": "BTubeOn",
     "redirect-subscriptions": "redirect_home",
     "disable-shorts": "hide_shorts",
-    "minimal-homepage": "minimal_homepage"
+    "minimal-homepage": "minimal_homepage",
+    "enable-website-blocking": "enable_website_blocking",
+    "enable-channel-blocking": "enable_channel_blocking"
 };
 
 // Mode presets
@@ -283,19 +285,25 @@ const modePresets = {
         BTubeOn: false,
         redirect_home: false,
         hide_shorts: false,
-        minimal_homepage: false
+        minimal_homepage: false,
+        enable_website_blocking: false,
+        enable_channel_blocking: false
     },
     "minimal": {
         BTubeOn: true,
         redirect_home: false,
         hide_shorts: true,
-        minimal_homepage: true
+        minimal_homepage: true,
+        enable_website_blocking: true,
+        enable_channel_blocking: true
     },
     "high-focus": {
         BTubeOn: true,
         redirect_home: true,
         hide_shorts: true,
-        minimal_homepage: true
+        minimal_homepage: true,
+        enable_website_blocking: true,
+        enable_channel_blocking: true
     }
 };
 
@@ -476,7 +484,12 @@ function initSettingsToggles() {
             }
             
             // Mark as changed if different from initial
-            changed = selectedMode !== initialMode;
+            // For custom mode, always mark as changed if it wasn't the initial mode
+            if (selectedMode === 'custom' && initialMode !== 'custom') {
+                changed = true;
+            } else {
+                changed = selectedMode !== initialMode;
+            }
             
             if (saveBtn) {
                 saveBtn.disabled = !changed;
@@ -522,10 +535,26 @@ function initSettingsToggles() {
             const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
             
             // Determine if login is required
+            // Login is required in these cases:
+            // 1. Entering custom mode (selecting custom)
+            // 2. Exiting custom mode (was custom, now selecting something else)
+            // 3. Moving from a stricter preset to a less strict one (e.g., high-focus -> minimal)
+            
             const isCustomMode = selectedMode === 'custom';
-            const isStricterSetting = !isCustomMode && 
-                                     strictnessLevels[selectedMode] > strictnessLevels[initialMode];
-            const requiresLogin = isCustomMode || !isStricterSetting;
+            const wasCustomMode = initialMode === 'custom';
+            
+            let requiresLogin = false;
+            
+            if (isCustomMode || wasCustomMode) {
+                // Require login when entering OR exiting custom mode
+                requiresLogin = true;
+            } else {
+                // Both are presets, check strictness levels
+                const selectedStrictness = strictnessLevels[selectedMode] || 0;
+                const initialStrictness = strictnessLevels[initialMode] || 0;
+                const isStricter = selectedStrictness > initialStrictness;
+                requiresLogin = !isStricter; // Require login if not becoming stricter
+            }
             
             // Build settings object
             let newValues = {};
