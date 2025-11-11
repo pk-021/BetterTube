@@ -352,11 +352,23 @@ function initSettingsToggles() {
         return 'custom';
     }
 
-    // Apply mode preset to checkboxes
+    // Apply mode preset to checkboxes, or restore custom settings
     function applyModeToCheckboxes(mode) {
+        if (mode === 'custom') {
+            // Restore custom settings from storage
+            chrome.storage.local.get('btube_custom_settings', (data) => {
+                const custom = data.btube_custom_settings || {};
+                Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox) {
+                        checkbox.checked = !!custom[storageKey];
+                    }
+                });
+            });
+            return;
+        }
         const preset = modePresets[mode];
         if (!preset) return;
-
         Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
             const checkbox = document.getElementById(checkboxId);
             if (checkbox && storageKey in preset) {
@@ -527,7 +539,7 @@ function initSettingsToggles() {
 
     // Save on button click (only if settings tab is active)
     if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', () => {
             const settingsTab = document.getElementById('tab-settings');
             if (!settingsTab.classList.contains('active')) return;
 
@@ -537,15 +549,20 @@ function initSettingsToggles() {
             // Determine if login is required
             // Login is required in these cases:
             // 1. Entering custom mode (selecting custom)
-            // 2. Exiting custom mode (was custom, now selecting something else)
+            // 2. Exiting custom mode (was custom, now selecting something else), EXCEPT when going to high-focus
             // 3. Moving from a stricter preset to a less strict one (e.g., high-focus -> minimal)
+            // Special case: High focus mode never requires login (it's the strictest mode)
             
             const isCustomMode = selectedMode === 'custom';
             const wasCustomMode = initialMode === 'custom';
+            const isHighFocus = selectedMode === 'high-focus';
             
             let requiresLogin = false;
             
-            if (isCustomMode || wasCustomMode) {
+            if (isHighFocus) {
+                // High focus mode never requires login (strictest mode)
+                requiresLogin = false;
+            } else if (isCustomMode || wasCustomMode) {
                 // Require login when entering OR exiting custom mode
                 requiresLogin = true;
             } else {
@@ -573,38 +590,61 @@ function initSettingsToggles() {
             }
 
             if (requiresLogin) {
-                // Store pending settings and require login
-                chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
-                    // Navigate popup to login.html
-                    window.location.href = 'login.html?from=settings';
-                });
+                // If saving custom mode, persist custom settings
+                if (selectedMode === 'custom') {
+                    chrome.storage.local.set({ btube_custom_settings: newValues }, () => {
+                        chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
+                            window.location.href = 'login.html?from=settings';
+                        });
+                    });
+                } else {
+                    chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
+                        window.location.href = 'login.html?from=settings';
+                    });
+                }
             } else {
-                // Apply settings directly without login for stricter presets
-                chrome.storage.local.set(newValues, () => {
-                    // Show success notification
-                    chrome.runtime.sendMessage({
-                        type: 'showNotification',
-                        message: 'Settings saved successfully!',
-                        notificationType: 'success'
+                // If saving custom mode, persist custom settings
+                if (selectedMode === 'custom') {
+                    chrome.storage.local.set({ btube_custom_settings: newValues }, () => {
+                        chrome.storage.local.set(newValues, () => {
+                            chrome.runtime.sendMessage({
+                                type: 'showNotification',
+                                message: 'Settings saved successfully!',
+                                notificationType: 'success'
+                            });
+                            initialMode = selectedMode;
+                            Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                                const checkbox = document.getElementById(checkboxId);
+                                if (checkbox) {
+                                    initialValues[checkboxId] = checkbox.checked;
+                                }
+                            });
+                            markActiveMode(selectedMode);
+                            changed = false;
+                            saveBtn.disabled = true;
+                            saveBtn.style.display = 'none';
+                        });
                     });
-                    
-                    // Update initial values and mode
-                    initialMode = selectedMode;
-                    Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
-                        const checkbox = document.getElementById(checkboxId);
-                        if (checkbox) {
-                            initialValues[checkboxId] = checkbox.checked;
-                        }
+                } else {
+                    chrome.storage.local.set(newValues, () => {
+                        chrome.runtime.sendMessage({
+                            type: 'showNotification',
+                            message: 'Settings saved successfully!',
+                            notificationType: 'success'
+                        });
+                        initialMode = selectedMode;
+                        Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                            const checkbox = document.getElementById(checkboxId);
+                            if (checkbox) {
+                                initialValues[checkboxId] = checkbox.checked;
+                            }
+                        });
+                        markActiveMode(selectedMode);
+                        changed = false;
+                        saveBtn.disabled = true;
+                        saveBtn.style.display = 'none';
                     });
-                    
-                    // Update active mode indicator
-                    markActiveMode(selectedMode);
-                    
-                    // Hide save button
-                    changed = false;
-                    saveBtn.disabled = true;
-                    saveBtn.style.display = 'none';
-                });
+                }
             }
         });
     }
