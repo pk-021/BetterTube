@@ -34,7 +34,10 @@ html[hide_shorts=true] ytd-reel-shelf-renderer,
 /* html[hide_shorts=true] ytm-video-with-context-renderer:has(a[href*="/shorts/"]) */
 
 
-html[hide_shorts=true] yt-chip-cloud-chip-renderer:has(yt-formatted-string[title=Shorts]),
+/* Target the second chip in filter bar (Shorts chip) */
+html[hide_shorts=true] yt-chip-cloud-renderer yt-chip-cloud-chip-renderer:nth-child(2) {
+    display: none !important;
+}
 
 /* 1. Hide only visible home feed */
 html[minimal_homepage=true] ytd-browse[page-subtype="home"] #contents {

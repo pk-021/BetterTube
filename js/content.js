@@ -132,6 +132,68 @@ function applyAttributes(settings) {
     });
 }
 
+// Cache blocked channels for performance
+let blockedChannelsCache = new Set();
+let blockedChannelsLastUpdated = 0;
+
+// Apply block_channel attribute to all video renderers based on blocked channels list
+function applyChannelAttributes() {
+    // Only process if block_channels is enabled
+    if (!settingCache.block_channels) {
+        return;
+    }
+    
+    const videoRenderers = document.querySelectorAll("ytd-video-renderer:not([block_channel])");
+    
+    // If no new renderers to process, skip
+    if (videoRenderers.length === 0) {
+        return;
+    }
+    
+    // Refresh cache if needed
+    const now = Date.now();
+    if (now - blockedChannelsLastUpdated > 5000) { // Refresh every 5 seconds max
+        getSettings(settings => {
+            const blockedChannels = settings.blockedChannels || [];
+            blockedChannelsCache.clear();
+            blockedChannels.forEach(item => {
+                if (item.name) {
+                    blockedChannelsCache.add(item.name.toLowerCase());
+                }
+            });
+            blockedChannelsLastUpdated = now;
+            processVideoRenderers(videoRenderers);
+        }, ['blockedChannels']);
+    } else {
+        processVideoRenderers(videoRenderers);
+    }
+}
+
+function processVideoRenderers(videoRenderers) {
+    const fragment = document.createDocumentFragment();
+    
+    videoRenderers.forEach(renderer => {
+        // Get channel name and handle from the video renderer
+        const channelLink = renderer.querySelector("ytd-channel-name a");
+        if (!channelLink) {
+            renderer.setAttribute("block_channel", "false");
+            return;
+        }
+        
+        const channelName = channelLink.textContent.trim().toLowerCase();
+        const channelHandle = channelLink.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
+        
+        // Check if this channel is in the blocked cache (match by name or handle)
+        const isBlocked = blockedChannelsCache.has(channelName) || blockedChannelsCache.has(channelHandle);
+        
+        renderer.setAttribute("block_channel", isBlocked ? "true" : "false");
+    });
+    
+    if (videoRenderers.length > 0) {
+        console.log(`Applied block_channel attribute to ${videoRenderers.length} new video renderers`);
+    }
+}
+
 //Mutation observer to observe changes to the attributes
 new MutationObserver((mutations) => {
     mutations.forEach(mutation => {
@@ -155,6 +217,7 @@ function update(arg) {
             configureLogo();
             update_home_props();
             applyAttributes(settingCache);
+            applyChannelAttributes();
             loadBookmarkButton();
             break;
 
@@ -170,11 +233,19 @@ function update(arg) {
             console.log("Navigation finished");
             configureLogo();
             update_home_props();
+            applyChannelAttributes();
             loadBookmarkButton();
             break;
 
         default: // yt-page-data-updated
             console.log("YT page data updated");
+            // Debounce channel attributes for dynamic content loading
+            if (applyChannelAttributes.timeout) {
+                clearTimeout(applyChannelAttributes.timeout);
+            }
+            applyChannelAttributes.timeout = setTimeout(() => {
+                applyChannelAttributes();
+            }, 300);
             break;
     }
 }
