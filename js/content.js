@@ -149,7 +149,7 @@ function applyChannelAttributes() {
     applyChannelAttributesTimeout = setTimeout(() => {
         getSettings(settings => {
             const blockedChannels = settings.blockedChannels || [];
-            const videoRenderers = document.querySelectorAll("ytd-video-renderer, yt-lockup-view-model");
+            const videoRenderers = document.querySelectorAll("ytd-video-renderer, yt-lockup-view-model, ytd-rich-item-renderer");
             
             if (videoRenderers.length === 0) {
                 console.log('No video renderers found');
@@ -173,16 +173,22 @@ function applyChannelAttributes() {
                 let channelHandle = "";
                 
                 if (!channelLink) {
-                    // Try yt-lockup-view-model structure
-                    const channelText = renderer.querySelector(".yt-core-attributed-string");
-                    if (channelText && channelText.textContent.trim()) {
-                        channelName = channelText.textContent.trim().toLowerCase();
-                        // Try to find channel link for handle
-                        const avatarLink = renderer.querySelector("yt-avatar-shape");
-                        if (avatarLink) {
-                            const href = avatarLink.getAttribute("href");
-                            if (href) {
-                                channelHandle = href.split("/").pop()?.toLowerCase() || "";
+                    // Try yt-lockup-view-model or ytd-rich-item-renderer structure
+                    const channelLinkAlt = renderer.querySelector("a[href^='/@']");
+                    if (channelLinkAlt) {
+                        channelName = channelLinkAlt.textContent.trim().toLowerCase();
+                        channelHandle = channelLinkAlt.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
+                    } else {
+                        const channelText = renderer.querySelector(".yt-core-attributed-string");
+                        if (channelText && channelText.textContent.trim()) {
+                            channelName = channelText.textContent.trim().toLowerCase();
+                            // Try to find channel link for handle
+                            const avatarLink = renderer.querySelector("yt-avatar-shape");
+                            if (avatarLink) {
+                                const href = avatarLink.getAttribute("href");
+                                if (href) {
+                                    channelHandle = href.split("/").pop()?.toLowerCase() || "";
+                                }
                             }
                         }
                     }
@@ -226,9 +232,15 @@ function applyChannelAttributes() {
                         let channelHandle = "";
                         
                         if (!channelLink) {
-                            const channelText = renderer.querySelector(".yt-core-attributed-string");
-                            if (channelText && channelText.textContent.trim()) {
-                                channelName = channelText.textContent.trim().toLowerCase();
+                            const channelLinkAlt = renderer.querySelector("a[href^='/@']");
+                            if (channelLinkAlt) {
+                                channelName = channelLinkAlt.textContent.trim().toLowerCase();
+                                channelHandle = channelLinkAlt.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
+                            } else {
+                                const channelText = renderer.querySelector(".yt-core-attributed-string");
+                                if (channelText && channelText.textContent.trim()) {
+                                    channelName = channelText.textContent.trim().toLowerCase();
+                                }
                             }
                         } else if (channelLink.textContent.trim()) {
                             channelName = channelLink.textContent.trim().toLowerCase();
@@ -259,7 +271,7 @@ function applyChannelAttributes() {
 setInterval(() => {
     console.log('[block_channel] Periodic check running...');
     if (!settingCache.block_channels) return;
-    const videoRenderers = document.querySelectorAll("ytd-video-renderer:not([block_channel]), yt-lockup-view-model:not([block_channel])");
+    const videoRenderers = document.querySelectorAll("ytd-video-renderer:not([block_channel]), yt-lockup-view-model:not([block_channel]), ytd-rich-item-renderer:not([block_channel])");
     if (videoRenderers.length > 0) {
         console.log(`[block_channel] Found ${videoRenderers.length} video renderers without block_channel attribute, applying now...`);
         applyChannelAttributes();
@@ -285,10 +297,10 @@ const videoRendererObserver = new MutationObserver((mutations) => {
         if (mutation.type === 'childList') {
             mutation.addedNodes.forEach(node => {
                 if (node.nodeType === Node.ELEMENT_NODE) {
-                    if (node.matches && (node.matches('ytd-video-renderer') || node.matches('yt-lockup-view-model'))) {
+                    if (node.matches && (node.matches('ytd-video-renderer') || node.matches('yt-lockup-view-model') || node.matches('ytd-rich-item-renderer'))) {
                         hasNewRenderers = true;
                     } else if (node.querySelector) {
-                        const renderers = node.querySelectorAll('ytd-video-renderer, yt-lockup-view-model');
+                        const renderers = node.querySelectorAll('ytd-video-renderer, yt-lockup-view-model, ytd-rich-item-renderer');
                         if (renderers.length > 0) {
                             hasNewRenderers = true;
                         }
