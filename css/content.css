@@ -77,3 +77,9 @@ html[minimal_homepage=true][is_home=true] .homeCenterLogo {
 html[redirect_home=true] .yt-simple-endpoint[title=Home]{
     display: none !important;
 }
+
+/* Hide blocked channels */
+html[block_channels="true"] ytd-video-renderer[block_channel="true"],
+html[block_channels="true"] yt-lockup-view-model[block_channel="true"] {
+    display: none !important;
+}
