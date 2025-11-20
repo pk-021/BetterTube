@@ -301,7 +301,7 @@ const settingsMap = {
     "disable-shorts": "hide_shorts",
     "minimal-homepage": "minimal_homepage",
     "enable-website-blocking": "enable_website_blocking",
-    "enable-channel-blocking": "enable_channel_blocking"
+    "block-channels": "block_channels"
 };
 
 // Mode presets
@@ -312,7 +312,7 @@ const modePresets = {
         hide_shorts: false,
         minimal_homepage: false,
         enable_website_blocking: false,
-        enable_channel_blocking: false
+        block_channels: false
     },
     "minimal": {
         BTubeOn: true,
@@ -320,7 +320,7 @@ const modePresets = {
         hide_shorts: true,
         minimal_homepage: true,
         enable_website_blocking: true,
-        enable_channel_blocking: true
+        block_channels: true
     },
     "high-focus": {
         BTubeOn: true,
@@ -328,7 +328,7 @@ const modePresets = {
         hide_shorts: true,
         minimal_homepage: true,
         enable_website_blocking: true,
-        enable_channel_blocking: true
+        block_channels: true
     }
 };
 

@@ -28,7 +28,8 @@ const settingsMap = {
     "extension-online": "BTubeOn",
     "redirect-subscriptions": "redirect_home",
     "disable-shorts": "hide_shorts",
-    "minimal-homepage": "minimal_homepage"
+    "minimal-homepage": "minimal_homepage",
+    "block-channels": "block_channels"
 };
 
 
@@ -43,16 +44,22 @@ function initSettingsToggles() {
             // Load saved state
             checkbox.checked = !!result[storageKey];
 
+            // (No HTML attribute logic here; only in content.js)
+
             // Save changes on toggle
             checkbox.addEventListener("change", () => {
                 const newValue = checkbox.checked;
                 chrome.storage.local.set({ [storageKey]: newValue });
+
+                // (No HTML attribute logic here; only in content.js)
+
                 // Only show notification for non-dark mode settings
                 const settingNames = {
                     "extension-online": "Extension",
                     "redirect-subscriptions": "Redirect to Subscriptions",
                     "disable-shorts": "Disable Shorts",
-                    "minimal-homepage": "Minimal Homepage"
+                    "minimal-homepage": "Minimal Homepage",
+                    "block-channels": "Block Channels"
                 };
                 // Do not notify for dark mode
                 if (settingNames.hasOwnProperty(checkboxId)) {

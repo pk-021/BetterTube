@@ -120,7 +120,13 @@ function configureLogo() {
 function applyAttributes(settings) {
     console.log("attributes should be applied!")
     Object.keys(settings).forEach(key => {
-        if (key.includes("hide") || key === "BTubeOn" || key === "minimal_homepage" || key === "redirect_home") {
+        if (
+            key.includes("hide") ||
+            key === "BTubeOn" ||
+            key === "minimal_homepage" ||
+            key === "redirect_home" ||
+            key === "block_channels"
+        ) {
             document.documentElement.setAttribute(key, settings[key]);
         }
     });
@@ -143,7 +149,6 @@ new MutationObserver((mutations) => {
 // SPA Event Handling
 // =======================
 function update(arg) {
-
     switch (arg) {
         case 1: // initial load
             console.log("Initial load complete");

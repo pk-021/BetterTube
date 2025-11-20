@@ -10,7 +10,7 @@ const modePresets = {
     hide_shorts: false,
     minimal_homepage: false,
     enable_website_blocking: false,
-    enable_channel_blocking: false
+    block_channels: false
   },
   minimal: {
     BTubeOn: true,
@@ -18,7 +18,7 @@ const modePresets = {
     hide_shorts: true,
     minimal_homepage: true,
     enable_website_blocking: true,
-    enable_channel_blocking: true
+    block_channels: true
   },
   "high-focus": {
     BTubeOn: true,
@@ -26,13 +26,15 @@ const modePresets = {
     hide_shorts: true,
     minimal_homepage: true,
     enable_website_blocking: true,
-    enable_channel_blocking: true
+    block_channels: true
   }
 };
 
 // --- Initialize settings (set minimal mode as default if none exist) ---
 chrome.storage.local.get(null, (existing) => {
-  const mergedSettings = { ...modePresets.minimal, ...existing };
+  // Remove any legacy defaultSettings or enable_channel_blocking
+  const { enable_channel_blocking, ...rest } = existing;
+  const mergedSettings = { ...modePresets.minimal, ...rest };
   chrome.storage.local.set(mergedSettings);
 });
 
