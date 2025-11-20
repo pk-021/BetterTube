@@ -760,7 +760,27 @@ html[dark_mode="true"] #tab-settings input:checked + .slider { background-color:
   background: var(--surface);
   border-radius: 6px;
   border: 1px solid var(--border);
-  transition: background 0.2s;
+  transition: background 0.2s, opacity 0.2s, border-color 0.2s;
+}
+
+.blocked-item.pending-add {
+  border-color: var(--active-mode);
+  border-width: 2px;
+  background: rgba(var(--active-mode-rgb), 0.05);
+}
+
+.blocked-item.pending-delete {
+  background: rgba(var(--danger), 0.05);
+  border-color: var(--danger);
+}
+
+.blocked-item.pending-delete .blocked-item-content {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.blocked-item.pending-delete .delete-block-btn {
+  opacity: 1;
 }
 
 .blocked-item:hover {
@@ -770,6 +790,9 @@ html[dark_mode="true"] #tab-settings input:checked + .slider { background-color:
 .blocked-item-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .blocked-item-title {
@@ -779,6 +802,26 @@ html[dark_mode="true"] #tab-settings input:checked + .slider { background-color:
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--active-mode);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.pending-delete .status-badge {
+  background: var(--danger);
 }
 
 .blocked-item-type {

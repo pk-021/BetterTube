@@ -2,20 +2,37 @@
 
 console.log("Service worker is running");
 
-// --- Default settings ---
-const defaultSettings = {
-  minimal_homepage: true,
-  hide_feed: true,
-  redirect_home: false,
-  hide_shorts: true,
-  BTubeOn: true,
-  enable_website_blocking: false,
-  enable_channel_blocking: false
+// --- Mode presets (same as in popup.js) ---
+const modePresets = {
+  off: {
+    BTubeOn: false,
+    redirect_home: false,
+    hide_shorts: false,
+    minimal_homepage: false,
+    enable_website_blocking: false,
+    enable_channel_blocking: false
+  },
+  minimal: {
+    BTubeOn: true,
+    redirect_home: false,
+    hide_shorts: true,
+    minimal_homepage: true,
+    enable_website_blocking: true,
+    enable_channel_blocking: true
+  },
+  "high-focus": {
+    BTubeOn: true,
+    redirect_home: true,
+    hide_shorts: true,
+    minimal_homepage: true,
+    enable_website_blocking: true,
+    enable_channel_blocking: true
+  }
 };
 
-// --- Initialize settings (set defaults if none exist) ---
+// --- Initialize settings (set minimal mode as default if none exist) ---
 chrome.storage.local.get(null, (existing) => {
-  const mergedSettings = { ...defaultSettings, ...existing };
+  const mergedSettings = { ...modePresets.minimal, ...existing };
   chrome.storage.local.set(mergedSettings);
 });
 
@@ -143,45 +160,75 @@ function buildBlockedWebsiteRules(blockedWebsites) {
   return rules;
 }
 
+// Debounce mechanism to prevent duplicate rule applications
+let applyBlockedRulesTimeout = null;
+let isApplyingBlockedRules = false;
+
 async function applyBlockedWebsiteRules(blockedWebsites) {
+  // Cancel any pending application
+  if (applyBlockedRulesTimeout) {
+    clearTimeout(applyBlockedRulesTimeout);
+    applyBlockedRulesTimeout = null;
+  }
+  
+  // If already applying, debounce this call
+  if (isApplyingBlockedRules) {
+    applyBlockedRulesTimeout = setTimeout(() => {
+      applyBlockedWebsiteRules(blockedWebsites);
+    }, 100);
+    return;
+  }
+  
+  isApplyingBlockedRules = true;
+  
   console.group('[Blocks] Applying blocked website rules');
   console.log('Blocked websites input:', blockedWebsites);
   
-  // Check if website blocking is enabled
-  const settings = await chrome.storage.local.get(['enable_website_blocking']);
-  const isEnabled = settings.enable_website_blocking !== false; // Default to true if not set for backward compatibility
-  
-  console.log('Website blocking enabled:', isEnabled);
-  
-  // If disabled, remove all blocking rules
-  if (!isEnabled) {
+  try {
+    // Check if website blocking is enabled
+    const settings = await chrome.storage.local.get(['enable_website_blocking']);
+    const isEnabled = settings.enable_website_blocking !== false; // Default to true if not set for backward compatibility
+    
+    console.log('Website blocking enabled:', isEnabled);
+    
+    // Fetch previous rule ids from storage
     const prev = await chrome.storage.local.get(['btube_block_rule_ids']);
     const toRemove = Array.isArray(prev.btube_block_rule_ids) ? prev.btube_block_rule_ids : [];
     
+    // If disabled, remove all blocking rules
+    if (!isEnabled) {
+      if (toRemove.length > 0) {
+        await chrome.declarativeNetRequest.updateDynamicRules({
+          addRules: [],
+          removeRuleIds: toRemove
+        });
+        await chrome.storage.local.set({ btube_block_rule_ids: [] });
+        console.log('Website blocking disabled - removed', toRemove.length, 'rules');
+      }
+      console.groupEnd();
+      isApplyingBlockedRules = false;
+      return;
+    }
+    
+    const rules = buildBlockedWebsiteRules(blockedWebsites);
+    const toAdd = rules;
+
+    // Remove old rules first, then add new ones
     if (toRemove.length > 0) {
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: [],
         removeRuleIds: toRemove
       });
-      await chrome.storage.local.set({ btube_block_rule_ids: [] });
-      console.log('Website blocking disabled - removed', toRemove.length, 'rules');
     }
-    console.groupEnd();
-    return;
-  }
-  
-  const rules = buildBlockedWebsiteRules(blockedWebsites);
-
-  // Fetch previous rule ids from storage (so we can remove them)
-  const prev = await chrome.storage.local.get(['btube_block_rule_ids']);
-  const toRemove = Array.isArray(prev.btube_block_rule_ids) ? prev.btube_block_rule_ids : [];
-  const toAdd = rules;
-
-  try {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      addRules: toAdd,
-      removeRuleIds: toRemove
-    });
+    
+    // Add new rules
+    if (toAdd.length > 0) {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        addRules: toAdd,
+        removeRuleIds: []
+      });
+    }
+    
     await chrome.storage.local.set({ btube_block_rule_ids: toAdd.map(r => r.id) });
     console.log(`Applied ${toAdd.length} blocked-website redirect rules`, {
       removedIds: toRemove,
@@ -197,6 +244,8 @@ async function applyBlockedWebsiteRules(blockedWebsites) {
   } catch (err) {
     console.groupEnd();
     console.error('[Blocks] Failed updating blocked website rules:', err);
+  } finally {
+    isApplyingBlockedRules = false;
   }
 }
 

@@ -3,9 +3,9 @@
 // =======================
 let storage = chrome.storage.local;
 
+// Off mode preset (all features disabled)
 let offSettings = {
     minimal_homepage: false,
-    hide_feed: false,
     redirect_home: false,
     hide_shorts: false,
     BTubeOn: false
@@ -210,12 +210,10 @@ let loadBookmarkButton = () => {
         bookmarkBtn.title = "Click to bookmark current timestamp";
         bookmarkBtn.addEventListener("click", addNewBookmarkEventHandler);
 
-        // Inline SVG
+        // Inline SVG - matching YouTube's native button structure
         bookmarkBtn.innerHTML = `
-        <svg class="bookmark-icon" viewBox="0 0 24 24" width="100%" height="100%" fill="#fff" fill-opacity="1" xmlns="http://www.w3.org/2000/svg">
-            <g transform="scale(0.6) translate(-4,0)">
-                <path d="M6 4C6 3.45 6.45 3 7 3H17C17.55 3 18 3.45 18 4V21L12 17L6 21V4Z"/>
-            </g>
+        <svg height="24" viewBox="0 0 24 24" width="24">
+            <path d="M5 6.2C5 5.07989 5 4.51984 5.21799 4.09202C5.40973 3.71569 5.71569 3.40973 6.09202 3.21799C6.51984 3 7.07989 3 8.2 3H15.8C16.9201 3 17.4802 3 17.908 3.21799C18.2843 3.40973 18.5903 3.71569 18.782 4.09202C19 4.51984 19 5.07989 19 6.2V21L12 16L5 21V6.2Z" stroke="#fff" stroke-width="2" stroke-linejoin="round" fill="none"/>
         </svg>
         `;
 

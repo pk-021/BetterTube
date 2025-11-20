@@ -124,25 +124,52 @@ async function checkPassword() {
   const password = await getPassword();
 
   if (enteredPass === password) {
-    // Check for pending settings in storage
-    chrome.storage.local.get('btube_pending_settings', (data) => {
-      if (data.btube_pending_settings) {
-          chrome.storage.local.set(data.btube_pending_settings, () => {
-            chrome.storage.local.remove('btube_pending_settings');
-            
-            // Show success notification
+    // Apply any pending settings or block updates after successful login
+    chrome.storage.local.get(['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions'], (data) => {
+      const pendingSettings = data.btube_pending_settings || null;
+      const pendingBlocks = data.btube_pending_block_updates || null;
+
+      // Build a single payload to set in one operation
+      const toSet = {};
+      let hadChanges = false;
+
+      if (pendingSettings && typeof pendingSettings === 'object') {
+        Object.assign(toSet, pendingSettings);
+        hadChanges = true;
+      }
+
+      if (pendingBlocks && typeof pendingBlocks === 'object') {
+        if (Array.isArray(pendingBlocks.blockedWebsites)) {
+          toSet.blockedWebsites = pendingBlocks.blockedWebsites;
+          hadChanges = true;
+        }
+        if (Array.isArray(pendingBlocks.blockedChannels)) {
+          toSet.blockedChannels = pendingBlocks.blockedChannels;
+          hadChanges = true;
+        }
+      }
+
+      if (hadChanges) {
+        chrome.storage.local.set(toSet, () => {
+          // Clean up pending keys/flags
+          const keysToRemove = ['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions', 'btube_original_block_lists'];
+          chrome.storage.local.remove(keysToRemove, () => {
+            // Notify success
             chrome.runtime.sendMessage({
               type: 'showNotification',
-              message: 'Settings saved successfully!',
+              message: 'Changes applied successfully!',
               notificationType: 'success'
             });
-            
+
+            // Redirect back to popup
             setTimeout(() => {
-              window.location.href = "popup.html";
+              window.location.href = 'popup.html';
             }, 500);
           });
+        });
       } else {
-        window.location.href = "settings.html";
+        // No pending changes – go back to popup by default
+        window.location.href = 'popup.html';
       }
     });
   } else {

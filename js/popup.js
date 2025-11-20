@@ -195,6 +195,29 @@ function closePopup() {
 
 
 
+// --- Global pending changes state ---
+const pendingChanges = {
+    settings: null,
+    blockedWebsites: null,
+    blockedChannels: null,
+    hasSettingsChanges: false,
+    hasBlockChanges: false,
+    hasDeletions: false
+};
+
+function hasPendingChanges() {
+    return pendingChanges.hasSettingsChanges || pendingChanges.hasBlockChanges;
+}
+
+function clearPendingChanges() {
+    pendingChanges.settings = null;
+    pendingChanges.blockedWebsites = null;
+    pendingChanges.blockedChannels = null;
+    pendingChanges.hasSettingsChanges = false;
+    pendingChanges.hasBlockChanges = false;
+    pendingChanges.hasDeletions = false;
+}
+
 window.addEventListener("DOMContentLoaded", () => {
     renderBookmarksFromStorage();
     
@@ -253,10 +276,12 @@ window.addEventListener("DOMContentLoaded", () => {
                 addBlockBtn.style.display = tab === 'blocking' ? 'flex' : 'none';
             }
 
-            // Show/hide save settings button based on active tab
-            // (save button visibility is controlled by settings changes, but ensure it's hidden on other tabs)
-            if (saveSettingsBtn && tab !== 'settings') {
-                saveSettingsBtn.style.display = 'none';
+            // Save button should be visible on all tabs if there are pending changes
+            if (saveSettingsBtn) {
+                if (hasPendingChanges()) {
+                    saveSettingsBtn.style.display = 'inline-flex';
+                    saveSettingsBtn.disabled = false;
+                }
             }
         });
     });
@@ -503,9 +528,11 @@ function initSettingsToggles() {
                 changed = selectedMode !== initialMode;
             }
             
+            pendingChanges.hasSettingsChanges = changed;
+            
             if (saveBtn) {
-                saveBtn.disabled = !changed;
-                saveBtn.style.display = changed ? 'inline-flex' : 'none';
+                saveBtn.disabled = !hasPendingChanges();
+                saveBtn.style.display = hasPendingChanges() ? 'inline-flex' : 'none';
             }
         });
     });
@@ -530,121 +557,151 @@ function initSettingsToggles() {
                 return cb && cb.checked !== initialValues[id];
             });
             
+            pendingChanges.hasSettingsChanges = changed;
+            
             if (saveBtn) {
-                saveBtn.disabled = !changed;
-                saveBtn.style.display = changed ? 'inline-flex' : 'none';
+                saveBtn.disabled = !hasPendingChanges();
+                saveBtn.style.display = hasPendingChanges() ? 'inline-flex' : 'none';
             }
         });
     });
 
-    // Save on button click (only if settings tab is active)
+    // Save on button click - handles both settings and blocking changes
     if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-            const settingsTab = document.getElementById('tab-settings');
-            if (!settingsTab.classList.contains('active')) return;
-
-            // Get selected mode
-            const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
-            
-            // Determine if login is required
-            // Login is required in these cases:
-            // 1. Entering custom mode (selecting custom)
-            // 2. Exiting custom mode (was custom, now selecting something else), EXCEPT when going to high-focus
-            // 3. Moving from a stricter preset to a less strict one (e.g., high-focus -> minimal)
-            // Special case: High focus mode never requires login (it's the strictest mode)
-            
-            const isCustomMode = selectedMode === 'custom';
-            const wasCustomMode = initialMode === 'custom';
-            const isHighFocus = selectedMode === 'high-focus';
-            
+    saveBtn.addEventListener('click', async () => {
+            // Determine if login is required based on changes
             let requiresLogin = false;
-            
-            if (isHighFocus) {
-                // High focus mode never requires login (strictest mode)
-                requiresLogin = false;
-            } else if (isCustomMode || wasCustomMode) {
-                // Require login when entering OR exiting custom mode
+
+            // Check if there are block deletions
+            if (pendingChanges.hasDeletions) {
                 requiresLogin = true;
-            } else {
-                // Both are presets, check strictness levels
-                const selectedStrictness = strictnessLevels[selectedMode] || 0;
-                const initialStrictness = strictnessLevels[initialMode] || 0;
-                const isStricter = selectedStrictness > initialStrictness;
-                requiresLogin = !isStricter; // Require login if not becoming stricter
             }
-            
-            // Build settings object
-            let newValues = {};
-            
-            if (selectedMode && selectedMode !== 'custom' && modePresets[selectedMode]) {
-                // Use preset values
-                newValues = { ...modePresets[selectedMode] };
-            } else {
-                // Use custom toggle values
-                Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
-                    const checkbox = document.getElementById(checkboxId);
-                    if (checkbox) {
-                        newValues[storageKey] = checkbox.checked;
-                    }
-                });
+
+            // Check settings changes for login requirement
+            if (pendingChanges.hasSettingsChanges) {
+                const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
+                const isCustomMode = selectedMode === 'custom';
+                const wasCustomMode = initialMode === 'custom';
+                const isHighFocus = selectedMode === 'high-focus';
+                
+                if (isHighFocus) {
+                    // High focus mode never requires login
+                    requiresLogin = requiresLogin || false;
+                } else if (isCustomMode || wasCustomMode) {
+                    // Require login when entering OR exiting custom mode
+                    requiresLogin = true;
+                } else {
+                    // Check strictness levels
+                    const selectedStrictness = strictnessLevels[selectedMode] || 0;
+                    const initialStrictness = strictnessLevels[initialMode] || 0;
+                    const isStricter = selectedStrictness > initialStrictness;
+                    requiresLogin = requiresLogin || !isStricter;
+                }
+            }
+
+            // Build complete changes object
+            const toSave = {};
+            let hasPendingSettings = false;
+            let hasPendingBlocks = false;
+
+            // Collect settings changes
+            if (pendingChanges.hasSettingsChanges) {
+                const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
+                if (selectedMode && selectedMode !== 'custom' && modePresets[selectedMode]) {
+                    Object.assign(toSave, modePresets[selectedMode]);
+                } else {
+                    Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                        const checkbox = document.getElementById(checkboxId);
+                        if (checkbox) {
+                            toSave[storageKey] = checkbox.checked;
+                        }
+                    });
+                }
+                hasPendingSettings = true;
+
+                // Persist custom settings if in custom mode
+                if (selectedMode === 'custom') {
+                    await chrome.storage.local.set({ btube_custom_settings: toSave });
+                }
+            }
+
+            // Collect blocking changes (filter out deleted items, keep only active)
+            if (pendingChanges.hasBlockChanges) {
+                if (pendingChanges.blockedWebsites) {
+                    toSave.blockedWebsites = pendingChanges.blockedWebsites
+                        .filter(item => !item.isDeleted)
+                        .map(({url, addedAt}) => ({url, addedAt}));
+                    hasPendingBlocks = true;
+                }
+                if (pendingChanges.blockedChannels) {
+                    toSave.blockedChannels = pendingChanges.blockedChannels
+                        .filter(item => !item.isDeleted)
+                        .map(({name, addedAt}) => ({name, addedAt}));
+                    hasPendingBlocks = true;
+                }
             }
 
             if (requiresLogin) {
-                // If saving custom mode, persist custom settings
-                if (selectedMode === 'custom') {
-                    chrome.storage.local.set({ btube_custom_settings: newValues }, () => {
-                        chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
-                            window.location.href = 'login.html?from=settings';
-                        });
+                // Stage all changes and redirect to login
+                const pendingData = {};
+                if (hasPendingSettings) {
+                    const settingsOnly = {};
+                    Object.entries(toSave).forEach(([key, val]) => {
+                        if (key !== 'blockedWebsites' && key !== 'blockedChannels') {
+                            settingsOnly[key] = val;
+                        }
                     });
-                } else {
-                    chrome.storage.local.set({ btube_pending_settings: newValues }, () => {
-                        window.location.href = 'login.html?from=settings';
-                    });
+                    pendingData.btube_pending_settings = settingsOnly;
                 }
+                if (hasPendingBlocks) {
+                    pendingData.btube_pending_block_updates = {};
+                    if (toSave.blockedWebsites) {
+                        pendingData.btube_pending_block_updates.blockedWebsites = toSave.blockedWebsites;
+                    }
+                    if (toSave.blockedChannels) {
+                        pendingData.btube_pending_block_updates.blockedChannels = toSave.blockedChannels;
+                    }
+                    if (pendingChanges.hasDeletions) {
+                        pendingData.btube_has_pending_block_deletions = true;
+                    }
+                }
+
+                await chrome.storage.local.set(pendingData);
+                window.location.href = 'login.html?from=popup';
             } else {
-                // If saving custom mode, persist custom settings
-                if (selectedMode === 'custom') {
-                    chrome.storage.local.set({ btube_custom_settings: newValues }, () => {
-                        chrome.storage.local.set(newValues, () => {
-                            chrome.runtime.sendMessage({
-                                type: 'showNotification',
-                                message: 'Settings saved successfully!',
-                                notificationType: 'success'
-                            });
-                            initialMode = selectedMode;
-                            Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
-                                const checkbox = document.getElementById(checkboxId);
-                                if (checkbox) {
-                                    initialValues[checkboxId] = checkbox.checked;
-                                }
-                            });
-                            markActiveMode(selectedMode);
-                            changed = false;
-                            saveBtn.disabled = true;
-                            saveBtn.style.display = 'none';
-                        });
+                // Save directly without login
+                await chrome.storage.local.set(toSave);
+                
+                chrome.runtime.sendMessage({
+                    type: 'showNotification',
+                    message: 'Changes saved successfully!',
+                    notificationType: 'success'
+                });
+
+                // Reset pending state
+                if (pendingChanges.hasSettingsChanges) {
+                    const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
+                    initialMode = selectedMode;
+                    Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
+                        const checkbox = document.getElementById(checkboxId);
+                        if (checkbox) {
+                            initialValues[checkboxId] = checkbox.checked;
+                        }
                     });
-                } else {
-                    chrome.storage.local.set(newValues, () => {
-                        chrome.runtime.sendMessage({
-                            type: 'showNotification',
-                            message: 'Settings saved successfully!',
-                            notificationType: 'success'
-                        });
-                        initialMode = selectedMode;
-                        Object.entries(settingsMap).forEach(([checkboxId, storageKey]) => {
-                            const checkbox = document.getElementById(checkboxId);
-                            if (checkbox) {
-                                initialValues[checkboxId] = checkbox.checked;
-                            }
-                        });
-                        markActiveMode(selectedMode);
-                        changed = false;
-                        saveBtn.disabled = true;
-                        saveBtn.style.display = 'none';
-                    });
+                    markActiveMode(selectedMode);
                 }
+
+                clearPendingChanges();
+                changed = false;
+                saveBtn.disabled = true;
+                saveBtn.style.display = 'none';
+
+                // Reload blocked content from storage
+                const result = await chrome.storage.local.get(['blockedWebsites', 'blockedChannels']);
+                pendingChanges.blockedWebsites = (result.blockedWebsites || []).slice();
+                pendingChanges.blockedChannels = (result.blockedChannels || []).slice();
+                renderBlockedWebsites(pendingChanges.blockedWebsites);
+                renderBlockedChannels(pendingChanges.blockedChannels);
             }
         });
     }
@@ -665,15 +722,6 @@ function initBlockingTab() {
     
     // Load blocked content when popup opens
     loadBlockedContent();
-
-    // Listen for storage changes to update the lists in real-time
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-        if (namespace === 'local') {
-            if (changes.blockedWebsites || changes.blockedChannels) {
-                loadBlockedContent();
-            }
-        }
-    });
 
     // Add block button - shows overlay
     if (addBlockBtn) {
@@ -814,7 +862,7 @@ async function addBlockedWebsite(url) {
             return;
         }
 
-        // Get existing blocked websites
+        // Get current blocked websites from storage
         const result = await chrome.storage.local.get(['blockedWebsites']);
         const blockedWebsites = result.blockedWebsites || [];
 
@@ -824,16 +872,25 @@ async function addBlockedWebsite(url) {
             return;
         }
 
-        // Add new blocked website
+        // Add and save immediately
         blockedWebsites.push({
             url: processedUrl,
             addedAt: Date.now()
         });
 
-        // Save to storage
         await chrome.storage.local.set({ blockedWebsites });
-        
-        console.log('Website blocked:', processedUrl);
+
+        // Update pending changes to reflect current storage state
+        pendingChanges.blockedWebsites = blockedWebsites.slice();
+
+        // Re-render to show new item
+        renderBlockedWebsites(pendingChanges.blockedWebsites);
+
+        chrome.runtime.sendMessage({
+            type: 'showNotification',
+            message: 'Website blocked successfully!',
+            notificationType: 'success'
+        });
     } catch (error) {
         console.error('Error adding blocked website:', error);
         alert('Failed to block website. Please try again.');
@@ -888,7 +945,7 @@ async function addBlockedChannel(channelName) {
             return;
         }
 
-        // Get existing blocked channels
+        // Get current blocked channels from storage
         const result = await chrome.storage.local.get(['blockedChannels']);
         const blockedChannels = result.blockedChannels || [];
 
@@ -898,16 +955,25 @@ async function addBlockedChannel(channelName) {
             return;
         }
 
-        // Add new blocked channel
+        // Add and save immediately
         blockedChannels.push({
             name: processedChannel,
             addedAt: Date.now()
         });
 
-        // Save to storage
         await chrome.storage.local.set({ blockedChannels });
-        
-        console.log('Channel blocked:', processedChannel);
+
+        // Update pending changes to reflect current storage state
+        pendingChanges.blockedChannels = blockedChannels.slice();
+
+        // Re-render to show new item
+        renderBlockedChannels(pendingChanges.blockedChannels);
+
+        chrome.runtime.sendMessage({
+            type: 'showNotification',
+            message: 'Channel blocked successfully!',
+            notificationType: 'success'
+        });
     } catch (error) {
         console.error('Error adding blocked channel:', error);
         alert('Failed to block channel. Please try again.');
@@ -917,16 +983,21 @@ async function addBlockedChannel(channelName) {
 // Load and display blocked websites and channels
 async function loadBlockedContent() {
     try {
-        const result = await chrome.storage.local.get(['blockedWebsites', 'blockedChannels']);
-        
-        const blockedWebsites = result.blockedWebsites || [];
-        const blockedChannels = result.blockedChannels || [];
+        // Use pending changes if available, otherwise load from storage
+        if (pendingChanges.blockedWebsites === null || pendingChanges.blockedChannels === null) {
+            const result = await chrome.storage.local.get(['blockedWebsites', 'blockedChannels']);
+            
+            if (pendingChanges.blockedWebsites === null) {
+                pendingChanges.blockedWebsites = (result.blockedWebsites || []).slice();
+            }
+            if (pendingChanges.blockedChannels === null) {
+                pendingChanges.blockedChannels = (result.blockedChannels || []).slice();
+            }
+        }
 
-        // Render blocked websites
-        renderBlockedWebsites(blockedWebsites);
-        
-        // Render blocked channels
-        renderBlockedChannels(blockedChannels);
+        // Render using pending data
+        renderBlockedWebsites(pendingChanges.blockedWebsites);
+        renderBlockedChannels(pendingChanges.blockedChannels);
     } catch (error) {
         console.error('Error loading blocked content:', error);
     }
@@ -951,7 +1022,7 @@ function renderBlockedWebsites(websites) {
     websites.forEach((website, index) => {
         const item = createBlockedItem(website.url, () => {
             deleteBlockedWebsite(index);
-        });
+        }, website.isPending, website.isDeleted);
         listContainer.appendChild(item);
     });
 }
@@ -975,15 +1046,18 @@ function renderBlockedChannels(channels) {
     channels.forEach((channel, index) => {
         const item = createBlockedItem(channel.name, () => {
             deleteBlockedChannel(index);
-        });
+        }, channel.isPending, channel.isDeleted);
         listContainer.appendChild(item);
     });
 }
 
 // Create a blocked item element
-function createBlockedItem(title, onDelete) {
+function createBlockedItem(title, onDelete, isPending = false, isDeleted = false) {
     const item = document.createElement('div');
     item.className = 'blocked-item';
+    
+    // Add visual state class only for deleted items
+    if (isDeleted) item.classList.add('pending-delete');
 
     const content = document.createElement('div');
     content.className = 'blocked-item-content';
@@ -992,13 +1066,26 @@ function createBlockedItem(title, onDelete) {
     titleEl.className = 'blocked-item-title';
     titleEl.textContent = title;
     titleEl.title = title; // Show full text on hover
+    
+    // Add status indicator only for deleted items
+    if (isDeleted) {
+        const statusEl = document.createElement('span');
+        statusEl.className = 'status-badge';
+        statusEl.textContent = 'Removed';
+        titleEl.appendChild(statusEl);
+    }
 
     content.appendChild(titleEl);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-block-btn';
-    deleteBtn.title = 'Delete';
-    deleteBtn.innerHTML = `
+    deleteBtn.title = isDeleted ? 'Undo' : 'Delete';
+    deleteBtn.innerHTML = isDeleted ? `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    ` : `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -1014,13 +1101,24 @@ function createBlockedItem(title, onDelete) {
 // Delete blocked website
 async function deleteBlockedWebsite(index) {
     try {
-        const result = await chrome.storage.local.get(['blockedWebsites']);
-        const blockedWebsites = result.blockedWebsites || [];
+        const item = pendingChanges.blockedWebsites[index];
         
-        blockedWebsites.splice(index, 1);
-        
-        await chrome.storage.local.set({ blockedWebsites });
-        console.log('Website unblocked');
+        if (item.isDeleted) {
+            // Undo deletion - restore the item
+            delete item.isDeleted;
+        } else {
+            // Mark existing item as deleted
+            item.isDeleted = true;
+            pendingChanges.hasDeletions = true;
+        }
+
+        pendingChanges.hasBlockChanges = true;
+
+        // Re-render to show updated state
+        renderBlockedWebsites(pendingChanges.blockedWebsites);
+
+        // Show save button
+        updateSaveButtonVisibility();
     } catch (error) {
         console.error('Error deleting blocked website:', error);
     }
@@ -1029,14 +1127,34 @@ async function deleteBlockedWebsite(index) {
 // Delete blocked channel
 async function deleteBlockedChannel(index) {
     try {
-        const result = await chrome.storage.local.get(['blockedChannels']);
-        const blockedChannels = result.blockedChannels || [];
+        const item = pendingChanges.blockedChannels[index];
         
-        blockedChannels.splice(index, 1);
-        
-        await chrome.storage.local.set({ blockedChannels });
-        console.log('Channel unblocked');
+        if (item.isDeleted) {
+            // Undo deletion - restore the item
+            delete item.isDeleted;
+        } else {
+            // Mark existing item as deleted
+            item.isDeleted = true;
+            pendingChanges.hasDeletions = true;
+        }
+
+        pendingChanges.hasBlockChanges = true;
+
+        // Re-render to show updated state
+        renderBlockedChannels(pendingChanges.blockedChannels);
+
+        // Show save button
+        updateSaveButtonVisibility();
     } catch (error) {
         console.error('Error deleting blocked channel:', error);
+    }
+}
+
+// Helper function to update save button visibility
+function updateSaveButtonVisibility() {
+    const saveBtn = document.getElementById('save-settings-btn');
+    if (saveBtn && hasPendingChanges()) {
+        saveBtn.style.display = 'inline-flex';
+        saveBtn.disabled = false;
     }
 }

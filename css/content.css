@@ -1,32 +1,26 @@
 /* --- Ads & Skeleton --- */
-div#home-page-skeleton,
-
 /* HIDE THE FOLLOWING */
 
 /* Shorts Button on Sidebar*/
-html[hide_shorts=true] .yt-simple-endpoint[title=Shorts],
-
 /* Regular-list shorts search results */
-html[hide_shorts=true] ytd-video-renderer:has(a[href*="/shorts/"]),
-
 /* Grid shorts search results */
-html[hide_shorts=true] .ytGridShelfViewModelHost:has(.shortsLockupViewModelHost),
-
 /* homepage shorts grid */
-html[hide_shorts=true] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
-
-
 /* Guide-style shorts on recommnedations panels of video */
+div#home-page-skeleton,
+html[hide_shorts=true] .yt-simple-endpoint[title=Shorts],
+html[hide_shorts=true] ytd-video-renderer:has(a[href*="/shorts/"]),
+html[hide_shorts=true] .ytGridShelfViewModelHost:has(.shortsLockupViewModelHost),
+html[hide_shorts=true] ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]),
 html[hide_shorts=true] ytm-reel-shelf-renderer,
 html[hide_shorts=true] ytd-reel-shelf-renderer,
-
-
+html[hide_shorts=true] yt-chip-cloud-chip-renderer:has(yt-formatted-string[title=Shorts]) {
+    display: none !important;
+}
 
 /* html[hide_shorts=true] ytd-rich-grid-renderer[is-shorts-grid] */
 /* html[hide_shorts=true] yt-tab-shape[tab-title=Shorts], */
 /* html[hide_shorts=true] #player-shorts-container, */
 /* html[hide_shorts=true] .ytd-shorts, */
-/* html[hide_shorts=true] yt-chip-cloud-chip-renderer:has(yt-formatted-string[title=Shorts]), */
 /* html[hide_shorts=true] ytd-compact-video-renderer:has(a[href*="/shorts/"]), */
 /* html[hide_shorts=true] ytd-notification-renderer:has(>a[href^="/shorts/"]), */
 /* html[hide_shorts=true] ytd-rich-item-renderer:has(a[href*="/shorts/"]), */
@@ -34,13 +28,8 @@ html[hide_shorts=true] ytd-reel-shelf-renderer,
 /* html[hide_shorts=true] ytm-rich-grid-renderer.is_shorts, */
 /* html[hide_shorts=true] ytm-video-with-context-renderer:has(a[href*="/shorts/"]) */
 
-
-
 /* 1. Hide only visible home feed */
-html[minimal_homepage=true] ytd-browse[page-subtype="home"] #contents {
-    display: none !important;
-}
-
+html[minimal_homepage=true] ytd-browse[page-subtype="home"] #contents,
 html[minimal_homepage=true] #chips-wrapper {
     display: none !important;
 }
@@ -48,8 +37,8 @@ html[minimal_homepage=true] #chips-wrapper {
 /* Center the #center element when both attributes are present */
 html[minimal_homepage=true][is_home=true] #center:has(yt-searchbox) {
     position: fixed;
-    top: 50vh;
-    left: 50vw;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
     width: 45%;
 }
@@ -69,14 +58,7 @@ html[minimal_homepage=true][is_home=true] .homeCenterLogo {
     height: 8rem;
 }
 
-
 /* Hide Home button if redirect */
-html[redirect_home=true] .yt-simple-endpoint[title=Home]{
+html[redirect_home=true] .yt-simple-endpoint[title=Home] {
     display: none !important;
-}
-
-.bookmark-btn svg.bookmark-icon {
-
-    fill: #fff; /* match YouTube icon color */
-    pointer-events: none; /* allow clicks to pass to button */
 }
