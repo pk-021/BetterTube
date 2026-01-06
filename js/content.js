@@ -36,7 +36,6 @@ function updateCurrentSettings() {
             settingCache = settings;
         }
         applyAttributes(settingCache);
-        console.log("updated settings:", settingCache);
 
         chrome.runtime.sendMessage({ type: "toggleRedirects", enabled: settings.redirect_home });
         chrome.runtime.sendMessage({ type: "toggleShorts", enabled: settings.hide_shorts });
@@ -71,7 +70,6 @@ function update_home_props() {
         document.documentElement.setAttribute("is_home", true);
         searchbar = document.querySelector("#center");
         searchbar.append(homeCenterLogo);
-        console.log("Center logo attached!")
     }
     else {
         document.documentElement.setAttribute("is_home", false)
@@ -98,7 +96,6 @@ function handleLogoClick(event) {
     }
     event.stopPropagation();
     event.preventDefault();
-    console.log("Tasks complete!");
     navigateToSubscriptions();
 }
 
@@ -107,7 +104,6 @@ function configureLogo() {
     if (logo) {
         logo.addEventListener("click", handleLogoClick, true);
         logo.addEventListener("touchend", handleLogoClick, true);
-        console.log("Logo found and configured!")
     }
     else {
         setTimeout(configureLogo, 100);
@@ -118,7 +114,6 @@ function configureLogo() {
 
 // Apply HTML attributes to the webpage
 function applyAttributes(settings) {
-    console.log("attributes should be applied!")
     Object.keys(settings).forEach(key => {
         if (
             key.includes("hide") ||
@@ -136,6 +131,44 @@ function applyAttributes(settings) {
 let applyChannelAttributesTimeout = null;
 let retryQueue = new Set();
 
+function extractChannelInfo(renderer) {
+    let channelName = "";
+    let channelHandle = "";
+
+    const channelLink = renderer.querySelector("ytd-channel-name a");
+    if (channelLink && channelLink.textContent.trim()) {
+        channelName = channelLink.textContent.trim().toLowerCase();
+        const href = channelLink.getAttribute("href");
+        if (href) channelHandle = href.split("/").pop()?.toLowerCase() || "";
+        return { name: channelName, handle: channelHandle };
+    }
+
+    const handleLink = renderer.querySelector("a[href^='/@']");
+    if (handleLink && handleLink.textContent.trim()) {
+        channelName = handleLink.textContent.trim().toLowerCase();
+        const href = handleLink.getAttribute("href");
+        if (href) channelHandle = href.split("/").pop()?.toLowerCase() || "";
+        return { name: channelName, handle: channelHandle };
+    }
+
+    const metadataRow = renderer.querySelector("yt-content-metadata-view-model .yt-content-metadata-view-model__metadata-row");
+    if (metadataRow) {
+        const span = metadataRow.querySelector(".yt-core-attributed-string");
+        if (span) {
+            const textNode = Array.from(span.childNodes).find(n => n.nodeType === 3 && n.textContent && n.textContent.trim());
+            const baseText = (textNode ? textNode.textContent : span.textContent) || "";
+            channelName = baseText.trim().toLowerCase();
+            if (channelName) return { name: channelName, handle: channelHandle };
+        }
+    }
+
+    const anyText = renderer.querySelector(".yt-core-attributed-string");
+    if (anyText && anyText.textContent.trim()) {
+        channelName = anyText.textContent.trim().toLowerCase();
+    }
+    return { name: channelName, handle: channelHandle };
+}
+
 function applyChannelAttributes() {
     if (!settingCache.block_channels) {
         return;
@@ -152,7 +185,6 @@ function applyChannelAttributes() {
             const videoRenderers = document.querySelectorAll("ytd-video-renderer, yt-lockup-view-model, ytd-rich-item-renderer");
             
             if (videoRenderers.length === 0) {
-                console.log('No video renderers found');
                 return;
             }
             
@@ -165,39 +197,9 @@ function applyChannelAttributes() {
                     return;
                 }
                 
-                // Get channel name and handle from the video renderer
-                // For ytd-video-renderer: ytd-channel-name a
-                // For yt-lockup-view-model: .yt-core-attributed-string (channel name text)
-                let channelLink = renderer.querySelector("ytd-channel-name a");
-                let channelName = "";
-                let channelHandle = "";
-                
-                if (!channelLink) {
-                    // Try yt-lockup-view-model or ytd-rich-item-renderer structure
-                    const channelLinkAlt = renderer.querySelector("a[href^='/@']");
-                    if (channelLinkAlt) {
-                        channelName = channelLinkAlt.textContent.trim().toLowerCase();
-                        channelHandle = channelLinkAlt.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
-                    } else {
-                        const channelText = renderer.querySelector(".yt-core-attributed-string");
-                        if (channelText && channelText.textContent.trim()) {
-                            channelName = channelText.textContent.trim().toLowerCase();
-                            // Try to find channel link for handle
-                            const avatarLink = renderer.querySelector("yt-avatar-shape");
-                            if (avatarLink) {
-                                const href = avatarLink.getAttribute("href");
-                                if (href) {
-                                    channelHandle = href.split("/").pop()?.toLowerCase() || "";
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if (channelLink && channelLink.textContent.trim()) {
-                    channelName = channelLink.textContent.trim().toLowerCase();
-                    channelHandle = channelLink.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
-                }
+                const info = extractChannelInfo(renderer);
+                const channelName = info.name;
+                const channelHandle = info.handle;
                 
                 if (!channelName) {
                     // Mark for retry
@@ -222,41 +224,24 @@ function applyChannelAttributes() {
             
             // Retry failed renderers
             if (needsRetry.length > 0) {
-                console.log(`Scheduling retry for ${needsRetry.length} video renderers`);
+                console.log(`[block_channel] Scheduling retry for ${needsRetry.length} renderers with missing channel info`);
                 needsRetry.forEach(r => retryQueue.add(r));
                 
                 setTimeout(() => {
                     retryQueue.forEach(renderer => {
-                        let channelLink = renderer.querySelector("ytd-channel-name a");
-                        let channelName = "";
-                        let channelHandle = "";
-                        
-                        if (!channelLink) {
-                            const channelLinkAlt = renderer.querySelector("a[href^='/@']");
-                            if (channelLinkAlt) {
-                                channelName = channelLinkAlt.textContent.trim().toLowerCase();
-                                channelHandle = channelLinkAlt.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
-                            } else {
-                                const channelText = renderer.querySelector(".yt-core-attributed-string");
-                                if (channelText && channelText.textContent.trim()) {
-                                    channelName = channelText.textContent.trim().toLowerCase();
-                                }
-                            }
-                        } else if (channelLink.textContent.trim()) {
-                            channelName = channelLink.textContent.trim().toLowerCase();
-                            channelHandle = channelLink.getAttribute("href")?.split("/").pop()?.toLowerCase() || "";
-                        }
-                        
-                        if (channelName) {
+                        const info2 = extractChannelInfo(renderer);
+                        const channelName2 = info2.name;
+                        const channelHandle2 = info2.handle;
+
+                        if (channelName2) {
                             const isBlocked = blockedChannels.some(item => {
                                 if (!item.name) return false;
                                 const blockedName = item.name.toLowerCase();
-                                return blockedName === channelName || blockedName === channelHandle;
+                                return blockedName === channelName2 || blockedName === channelHandle2;
                             });
-                            
+
                             renderer.setAttribute("block_channel", isBlocked ? "true" : "false");
                             retryQueue.delete(renderer);
-                            console.log(`Retried and applied block_channel to renderer`);
                         }
                     });
                 }, 1000);
@@ -269,7 +254,6 @@ function applyChannelAttributes() {
 
 // Periodic check to ensure all renderers have the attribute
 setInterval(() => {
-    console.log('[block_channel] Periodic check running...');
     if (!settingCache.block_channels) return;
     const videoRenderers = document.querySelectorAll("ytd-video-renderer:not([block_channel]), yt-lockup-view-model:not([block_channel]), ytd-rich-item-renderer:not([block_channel])");
     if (videoRenderers.length > 0) {
@@ -310,10 +294,8 @@ const videoRendererObserver = new MutationObserver((mutations) => {
         }
     }
     if (hasNewRenderers) {
-        console.log('[block_channel] MutationObserver: New video renderers detected, applying attributes...');
+        console.log('[block_channel] MutationObserver: New renderers detected, applying attributes');
         applyChannelAttributes();
-    } else {
-        console.log('[block_channel] MutationObserver: No new video renderers detected.');
     }
 });
 
@@ -332,7 +314,6 @@ videoRendererObserver.observe(document.body, {
 function update(arg) {
     switch (arg) {
         case 1: // initial load
-            console.log("Initial load complete");
             configureLogo();
             update_home_props();
             applyAttributes(settingCache);
@@ -341,15 +322,12 @@ function update(arg) {
             break;
 
         case 2: // state navigate end
-            console.log("State navigation ended");
             break;
 
         case 3: // navigation start
-            console.log("Navigation started");
             break;
 
         case 4: // navigation finish
-            console.log("Navigation finished");
             configureLogo();
             update_home_props();
             applyChannelAttributes();
@@ -357,7 +335,6 @@ function update(arg) {
             break;
 
         default: // yt-page-data-updated
-            console.log("YT page data updated");
             applyChannelAttributes();
             break;
     }
@@ -393,7 +370,6 @@ let loadBookmarkButton = () => {
     }
 
     const button = document.querySelector(".bookmark-btn");
-    console.log("TRYING TO LOAD BUTTON!");
 
     if (!button) {
         // Create button wrapper
@@ -411,7 +387,6 @@ let loadBookmarkButton = () => {
 
         const youtubeRightControls = document.querySelector(".ytp-right-controls");
         if (youtubeRightControls) {
-            console.log("Youtube right controls found!");
             youtubeRightControls.prepend(bookmarkBtn);
         }
     }
@@ -425,9 +400,6 @@ function saveBookMarksToStorage() {
     chrome.storage.sync.set(
         {
             bookmarks: bookmarks,
-        },
-        () => {
-            console.log("Bookmarks Saved to storage.");
         }
     );
 }
@@ -685,7 +657,6 @@ function convertToShortUrl(longUrl) {
     let url = longUrl.substring(29, longUrl.length);
     const urlParams = new URLSearchParams(url);
     const videoId = urlParams.get("v");
-    console.log(urlParams);
     return `https://youtu.be/${videoId}?t=${getCurrentTime()}`;
 }
 

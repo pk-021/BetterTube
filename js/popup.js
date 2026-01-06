@@ -229,6 +229,18 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
     
+    // Check if we should open blocking tab (from settings link)
+    chrome.storage.local.get(['targetTab'], (result) => {
+        if (result.targetTab === 'blocking') {
+            // Clear the flag
+            chrome.storage.local.remove('targetTab');
+            // Switch to blocking tab programmatically
+            setTimeout(() => {
+                switchToTab('blocking');
+            }, 100);
+        }
+    });
+    
     // Short delay to allow initial paint
     setTimeout(() => {
         document.body.setAttribute("data-loaded", "true");
@@ -244,6 +256,46 @@ window.addEventListener("DOMContentLoaded", () => {
     const addBlockBtn = document.getElementById('add-block-btn');
     const saveSettingsBtn = document.getElementById('save-settings-btn');
 
+    // Function to switch tabs programmatically
+    function switchToTab(tabName) {
+        if (!tabViews[tabName]) return;
+
+        // Update views state
+        Object.entries(tabViews).forEach(([key, el]) => {
+            const show = key === tabName;
+            if (!el) return;
+            el.classList.toggle('active', show);
+            el.hidden = !show;
+        });
+
+        // Update buttons state
+        tabButtons.forEach(btn => {
+            const btnTab = btn.getAttribute('data-tab');
+            const isActive = btnTab === tabName;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', String(isActive));
+        });
+
+        // Show/hide add block button based on active tab
+        if (addBlockBtn) {
+            addBlockBtn.classList.toggle('is-hidden', tabName !== 'blocking');
+        }
+
+        // Show/hide blocking settings button - only on settings tab
+        const popupBlockingBtn = document.getElementById('popup-blocking-btn');
+        if (popupBlockingBtn) {
+            popupBlockingBtn.classList.toggle('is-hidden', tabName !== 'settings');
+        }
+
+        // Save button visibility
+        if (saveSettingsBtn) {
+            if (hasPendingChanges()) {
+                saveSettingsBtn.style.display = 'inline-flex';
+                saveSettingsBtn.disabled = false;
+            }
+        }
+    }
+
     tabButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
@@ -256,33 +308,7 @@ window.addEventListener("DOMContentLoaded", () => {
             const tab = target.getAttribute('data-tab');
             if (!tab || !(tab in tabViews)) return;
 
-            // Update buttons state
-            tabButtons.forEach(b => {
-                const isActive = b === target;
-                b.classList.toggle('active', isActive);
-                b.setAttribute('aria-selected', String(isActive));
-            });
-
-            // Update views state
-            Object.entries(tabViews).forEach(([key, el]) => {
-                const show = key === tab;
-                if (!el) return;
-                el.classList.toggle('active', show);
-                el.hidden = !show;
-            });
-
-            // Show/hide add block button based on active tab
-            if (addBlockBtn) {
-                addBlockBtn.style.display = tab === 'blocking' ? 'flex' : 'none';
-            }
-
-            // Save button should be visible on all tabs if there are pending changes
-            if (saveSettingsBtn) {
-                if (hasPendingChanges()) {
-                    saveSettingsBtn.style.display = 'inline-flex';
-                    saveSettingsBtn.disabled = false;
-                }
-            }
+            switchToTab(tab);
         });
     });
 
@@ -291,6 +317,14 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Initialize Blocking tab functionality
     initBlockingTab();
+
+    // Handle blocking icon button in settings tab
+    const popupBlockingBtn = document.getElementById('popup-blocking-btn');
+    if (popupBlockingBtn) {
+        popupBlockingBtn.addEventListener('click', () => {
+            switchToTab('blocking');
+        });
+    }
 });
 
 

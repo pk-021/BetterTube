@@ -150,16 +150,24 @@ async function checkPassword() {
       }
 
       if (hadChanges) {
-        chrome.storage.local.set(toSet, () => {
+              chrome.storage.local.set(toSet, () => {
           // Clean up pending keys/flags
           const keysToRemove = ['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions', 'btube_original_block_lists'];
-          chrome.storage.local.remove(keysToRemove, () => {
-            // Notify success
-            chrome.runtime.sendMessage({
-              type: 'showNotification',
-              message: 'Changes applied successfully!',
-              notificationType: 'success'
-            });
+                chrome.storage.local.remove(keysToRemove, () => {
+                  // Notify success (safe)
+                  try {
+                    if (chrome?.runtime?.id) {
+                      chrome.runtime.sendMessage({
+                        type: 'showNotification',
+                        message: 'Changes applied successfully!',
+                        notificationType: 'success'
+                      });
+                    }
+                  } catch (e) {
+                    if (e && /Extension context invalidated/i.test(e.message || '')) {
+                      console.log('[ctx-invalidated] login sendMessage suppressed:', e.message);
+                    }
+                  }
 
             // Redirect back to popup
             setTimeout(() => {
@@ -223,11 +231,19 @@ resetNextBtn.addEventListener("click", async () => {
 
 // --- Browser notification function ---
 function showBrowserNotification(message, type = 'info') {
-  chrome.runtime.sendMessage({
-    type: 'showNotification',
-    message: message,
-    notificationType: type
-  });
+  try {
+    if (chrome?.runtime?.id) {
+      chrome.runtime.sendMessage({
+        type: 'showNotification',
+        message: message,
+        notificationType: type
+      });
+    }
+  } catch (e) {
+    if (e && /Extension context invalidated/i.test(e.message || '')) {
+      console.log('[ctx-invalidated] login sendMessage suppressed:', e.message);
+    }
+  }
 }
 
 // --- Custom notification function (for login page) ---

@@ -18,12 +18,65 @@ body {
 }
 
 /* --- Header Styling --- */
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
 h2 {
     text-align: left;
-    margin: 20px;
+    margin: 20px 0;
     font-size: 1.25rem;
     font-weight: 700;
     color: #030303;
+}
+
+.blocking-link {
+    font-size: 0.85rem;
+    color: #065fd4;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.blocking-link:hover {
+    background-color: #f2f2f2;
+    text-decoration: underline;
+}
+
+.blocking-icon-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: #065fd4;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.blocking-icon-btn svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+.blocking-icon-btn:hover {
+    background-color: #f2f2f2;
+}
+
+.blocking-icon-btn:active {
+    background-color: #e0e0e0;
 }
 
 /* --- Individual Setting Row --- */
@@ -135,6 +188,26 @@ html[dark_mode="true"] .setting-item:hover {
 
 html[dark_mode="true"] .setting-item label {
     color: #e0e0e0;
+}
+
+html[dark_mode="true"] .blocking-link {
+    color: #3ea6ff;
+}
+
+html[dark_mode="true"] .blocking-link:hover {
+    background-color: #2a2a2a;
+}
+
+html[dark_mode="true"] .blocking-icon-btn {
+    color: #3ea6ff;
+}
+
+html[dark_mode="true"] .blocking-icon-btn:hover {
+    background-color: #2a2a2a;
+}
+
+html[dark_mode="true"] .blocking-icon-btn:active {
+    background-color: #1a1a1a;
 }
 
 html[dark_mode="true"] .slider {

@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save to storage
       await chrome.storage.local.set({ blockedWebsites });
       
-      console.log('Website blocked:', cleanUrl);
+      console.log('[Block] Website added:', cleanUrl);
     } catch (error) {
       console.error('Error adding blocked website:', error);
       alert('Failed to block website. Please try again.');
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Save to storage
       await chrome.storage.local.set({ blockedChannels });
       
-      console.log('Channel blocked:', channelName);
+      console.log('[Block] Channel added:', channelName);
     } catch (error) {
       console.error('Error adding blocked channel:', error);
       alert('Failed to block channel. Please try again.');

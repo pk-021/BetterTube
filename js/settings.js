@@ -81,6 +81,19 @@ window.addEventListener("DOMContentLoaded", () => {
     applyDarkMode();
     initSettingsToggles();
 
+    // Handle blocking link click - open popup with blocking tab
+    const blockingLink = document.getElementById('blocking-link');
+    if (blockingLink) {
+        blockingLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Store the target tab in storage
+            chrome.storage.local.set({ targetTab: 'blocking' }, () => {
+                // Open popup.html
+                window.location.href = 'popup.html';
+            });
+        });
+    }
+
     // Short delay to allow initial paint
     setTimeout(() => {
         document.body.setAttribute("data-loaded", "true");

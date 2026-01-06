@@ -1,7 +1,5 @@
 "use strict";
 
-console.log("Service worker is running");
-
 // --- Mode presets (same as in popup.js) ---
 const modePresets = {
   off: {
@@ -124,37 +122,48 @@ function buildBlockedWebsiteRules(blockedWebsites) {
 
   (blockedWebsites || []).forEach(entry => {
     if (!entry || !entry.url) return;
-    const raw = String(entry.url).trim().toLowerCase();
+    let raw = String(entry.url).trim().toLowerCase();
     if (!raw) return;
 
-    let regexFilter = null;
-
-    if (raw.includes('/')) {
-      // Full host + path entry (we preserved TLDs when a path exists)
-      const [hostPart, ...pathParts] = raw.split('/');
-      const hostEsc = escapeForRegex(hostPart);
-      const pathEsc = escapeForRegex(pathParts.join('/'));
-      // Match any subdomain of hostPart and the specific path (ignore query/hash)
-      regexFilter = `^https?:\\/\\/(?:[a-z0-9-]+\\.)*${hostEsc}\\/${pathEsc}(?:[?#].*)?$`;
-    } else {
-      // Core domain only (no TLD) – match any TLD but require a label boundary
-      const core = escapeForRegex(raw);
-      // Ensure there's a dot right after the core label, so 'notcore.com' won't match
-      regexFilter = `^https?:\\/\\/(?:[a-z0-9-]+\\.)*${core}\\.[a-z0-9.-]+(?:[\\/?#]|$)`;
-    }
+    // Strip the scheme (http:// or https://) if present
+    raw = raw.replace(/^https?:\/\//, '');
+    // Remove trailing slash
+    raw = raw.replace(/\/$/, '');
+    if (!raw) return;
 
     try {
+      // Use urlFilter with || prefix for proper subdomain matching
+      const urlFilter = `||${raw}`;
+      
+      // Rule 1: Redirect main_frame to google.com with HIGHEST priority (1)
+      // This must execute first before any block rules
       rules.push({
         id: nextId++,
         priority: 1,
         action: { type: 'redirect', redirect: { url: 'https://www.google.com/' } },
         condition: {
-          regexFilter,
+          urlFilter,
           resourceTypes: ['main_frame']
         }
       });
+      
+      // Rule 2: Redirect all other resource types with LOWER priority (2)
+      // This ensures main_frame redirect is evaluated first, then everything else
+      rules.push({
+        id: nextId++,
+        priority: 2,
+        action: { type: 'redirect', redirect: { url: 'https://www.google.com/' } },
+        condition: {
+          urlFilter,
+          resourceTypes: [
+            'sub_frame',
+            'xmlhttprequest',
+            'script',
+            'other'
+          ]
+        }
+      });
     } catch (e) {
-      // Skip invalid rule
       console.warn('Skipping invalid blocked website rule for', raw, e);
     }
   });
@@ -189,23 +198,24 @@ async function applyBlockedWebsiteRules(blockedWebsites) {
   try {
     // Check if website blocking is enabled
     const settings = await chrome.storage.local.get(['enable_website_blocking']);
-    const isEnabled = settings.enable_website_blocking !== false; // Default to true if not set for backward compatibility
+    const isEnabled = settings.enable_website_blocking !== false;
     
     console.log('Website blocking enabled:', isEnabled);
     
-    // Fetch previous rule ids from storage
-    const prev = await chrome.storage.local.get(['btube_block_rule_ids']);
-    const toRemove = Array.isArray(prev.btube_block_rule_ids) ? prev.btube_block_rule_ids : [];
+    // Get ALL currently installed dynamic rules to find existing block rules
+    const allCurrentRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const existingBlockRules = allCurrentRules.filter(r => r.id >= BLOCK_RULE_BASE_ID);
+    const existingBlockIds = existingBlockRules.map(r => r.id);
     
     // If disabled, remove all blocking rules
     if (!isEnabled) {
-      if (toRemove.length > 0) {
+      if (existingBlockIds.length > 0) {
         await chrome.declarativeNetRequest.updateDynamicRules({
           addRules: [],
-          removeRuleIds: toRemove
+          removeRuleIds: existingBlockIds
         });
         await chrome.storage.local.set({ btube_block_rule_ids: [] });
-        console.log('Website blocking disabled - removed', toRemove.length, 'rules');
+        console.log('Website blocking disabled - removed', existingBlockIds.length, 'rules');
       }
       console.groupEnd();
       isApplyingBlockedRules = false;
@@ -215,12 +225,13 @@ async function applyBlockedWebsiteRules(blockedWebsites) {
     const rules = buildBlockedWebsiteRules(blockedWebsites);
     const toAdd = rules;
 
-    // Remove old rules first, then add new ones
-    if (toRemove.length > 0) {
+    // Remove ALL existing block rules first (not just stored ones)
+    if (existingBlockIds.length > 0) {
       await chrome.declarativeNetRequest.updateDynamicRules({
         addRules: [],
-        removeRuleIds: toRemove
+        removeRuleIds: existingBlockIds
       });
+      console.log('Removed', existingBlockIds.length, 'existing block rules');
     }
     
     // Add new rules
@@ -233,12 +244,12 @@ async function applyBlockedWebsiteRules(blockedWebsites) {
     
     await chrome.storage.local.set({ btube_block_rule_ids: toAdd.map(r => r.id) });
     console.log(`Applied ${toAdd.length} blocked-website redirect rules`, {
-      removedIds: toRemove,
+      removedIds: existingBlockIds,
       addedIds: toAdd.map(r => r.id),
       samples: toAdd.slice(0, 3).map(r => ({ id: r.id, regex: r.condition.regexFilter }))
     });
 
-    // Verify install status and specifically our block rules range
+    // Verify install status
     const allRules = await chrome.declarativeNetRequest.getDynamicRules();
     const blockRange = allRules.filter(r => r.id >= BLOCK_RULE_BASE_ID);
     console.log('Verification: dynamic rules count', allRules.length, 'blocked-range count', blockRange.length);
