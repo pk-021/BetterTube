@@ -8,7 +8,8 @@ const modePresets = {
     hide_shorts: false,
     minimal_homepage: false,
     enable_website_blocking: false,
-    block_channels: false
+    block_channels: false,
+    hide_sidebar_recommendations: false
   },
   minimal: {
     BTubeOn: true,
@@ -16,15 +17,17 @@ const modePresets = {
     hide_shorts: true,
     minimal_homepage: true,
     enable_website_blocking: true,
-    block_channels: true
+    block_channels: true,
+    hide_sidebar_recommendations: false
   },
   "high-focus": {
     BTubeOn: true,
-    redirect_home: true,
+    redirect_home: false,
     hide_shorts: true,
     minimal_homepage: true,
     enable_website_blocking: true,
-    block_channels: true
+    block_channels: true,
+    hide_sidebar_recommendations: true
   }
 };
 
@@ -33,6 +36,12 @@ chrome.storage.local.get(null, (existing) => {
   // Remove any legacy defaultSettings or enable_channel_blocking
   const { enable_channel_blocking, ...rest } = existing;
   const mergedSettings = { ...modePresets.minimal, ...rest };
+  
+  // Ensure new settings have default values if not present
+  if (!('hide_sidebar_recommendations' in mergedSettings)) {
+    mergedSettings.hide_sidebar_recommendations = false;
+  }
+  
   chrome.storage.local.set(mergedSettings);
 });
 

@@ -469,6 +469,17 @@ html[dark_mode="true"] .blocking-icon-btn:active {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Dark mode - Mode selector enhanced visibility */
+html[dark_mode="true"] .mode-option.mode-active .mode-card {
+  background: rgba(var(--active-mode-rgb), 0.25);
+  border-color: var(--active-mode);
+}
+
+html[dark_mode="true"] .mode-option.mode-active input[type="radio"]:checked + .mode-card {
+  background: rgba(var(--active-mode-rgb), 0.3);
+  box-shadow: 0 0 0 3px rgba(var(--active-mode-rgb), 0.25);
+}
+
 /* --- Embedded Settings View Styles --- */
 .settings-mode-view,
 .settings-custom-view {
@@ -574,19 +585,24 @@ html[dark_mode="true"] .blocking-icon-btn:active {
 .mode-option input[type="radio"]:checked + .mode-card {
   background: var(--surface);
   border-color: var(--active-mode);
+  border-width: 2px;
 }
 
-/* Currently active/applied mode */
+/* Currently active/applied mode - make it much more visible */
 .mode-option.mode-active .mode-card {
-  background: rgba(var(--active-mode-rgb), 0.08);
+  background: rgba(var(--active-mode-rgb), 0.15);
   border-color: var(--active-mode);
+  border-width: 3px;
+  position: relative;
 }
+
 
 /* When a mode is both selected and active */
 .mode-option.mode-active input[type="radio"]:checked + .mode-card {
-  background: rgba(var(--active-mode-rgb), 0.12);
+  background: rgba(var(--active-mode-rgb), 0.2);
   border-color: var(--active-mode);
-  box-shadow: 0 0 0 3px rgba(var(--active-mode-rgb), 0.15);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(var(--active-mode-rgb), 0.2);
 }
 
 /* Custom mode option container */

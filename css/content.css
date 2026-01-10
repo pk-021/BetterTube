@@ -78,6 +78,16 @@ html[redirect_home=true] .yt-simple-endpoint[title=Home]{
     display: none !important;
 }
 
+/* Hide sidebar recommendations - on playlist pages, only hide children except playlist panel */
+html[hide_sidebar_recommendations=true][is_playlist=true] #secondary-inner > *:not(ytd-playlist-panel-renderer#playlist) {
+    display: none !important;
+}
+
+/* Hide sidebar recommendations - on non-playlist pages, hide entire secondary */
+html[hide_sidebar_recommendations=true][is_playlist=false] #secondary.ytd-watch-flexy {
+    display: none !important;
+}
+
 /* Hide blocked channels */
 html[block_channels="true"] ytd-video-renderer[block_channel="true"],
 html[block_channels="true"] yt-lockup-view-model[block_channel="true"],

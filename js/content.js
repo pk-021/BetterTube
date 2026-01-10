@@ -8,7 +8,8 @@ let offSettings = {
     minimal_homepage: false,
     redirect_home: false,
     hide_shorts: false,
-    BTubeOn: false
+    BTubeOn: false,
+    hide_sidebar_recommendations: false
 }
 
 let settingCache = {};
@@ -74,6 +75,13 @@ function update_home_props() {
     else {
         document.documentElement.setAttribute("is_home", false)
     }
+}
+
+function update_playlist_props() {
+    const url = window.location.href;
+    // Check if URL contains playlist parameter or is a playlist page
+    const isPlaylist = /[?&]list=/.test(url) || /\/playlist\?/.test(url);
+    document.documentElement.setAttribute("is_playlist", isPlaylist);
 }
 
 // =======================
@@ -330,6 +338,7 @@ function update(arg) {
         case 4: // navigation finish
             configureLogo();
             update_home_props();
+            update_playlist_props();
             applyChannelAttributes();
             loadBookmarkButton();
             break;
@@ -350,6 +359,9 @@ window.addEventListener("yt-navigate-finish", update.bind(null, 4));
 window.addEventListener("yt-page-data-updated", update);
 window.addEventListener("yt-page-data-fetched", update);
 window.addEventListener("yt-page-type-changed", update);
+
+// Initialize playlist status on load
+update_playlist_props();
 window.addEventListener("yt-load-next-continuation", update);
 
 

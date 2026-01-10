@@ -125,9 +125,10 @@ async function checkPassword() {
 
   if (enteredPass === password) {
     // Apply any pending settings or block updates after successful login
-    chrome.storage.local.get(['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions'], (data) => {
+    chrome.storage.local.get(['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions', 'btube_pending_mode'], (data) => {
       const pendingSettings = data.btube_pending_settings || null;
       const pendingBlocks = data.btube_pending_block_updates || null;
+      const pendingMode = data.btube_pending_mode || null;
 
       // Build a single payload to set in one operation
       const toSet = {};
@@ -136,6 +137,11 @@ async function checkPassword() {
       if (pendingSettings && typeof pendingSettings === 'object') {
         Object.assign(toSet, pendingSettings);
         hadChanges = true;
+        
+        // If custom mode was selected, also save it to btube_custom_settings
+        if (pendingMode === 'custom') {
+          toSet.btube_custom_settings = pendingSettings;
+        }
       }
 
       if (pendingBlocks && typeof pendingBlocks === 'object') {
@@ -152,7 +158,7 @@ async function checkPassword() {
       if (hadChanges) {
               chrome.storage.local.set(toSet, () => {
           // Clean up pending keys/flags
-          const keysToRemove = ['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions', 'btube_original_block_lists'];
+          const keysToRemove = ['btube_pending_settings', 'btube_pending_block_updates', 'btube_has_pending_block_deletions', 'btube_original_block_lists', 'btube_pending_mode'];
                 chrome.storage.local.remove(keysToRemove, () => {
                   // Notify success (safe)
                   try {

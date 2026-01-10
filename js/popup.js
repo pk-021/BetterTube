@@ -335,7 +335,8 @@ const settingsMap = {
     "disable-shorts": "hide_shorts",
     "minimal-homepage": "minimal_homepage",
     "enable-website-blocking": "enable_website_blocking",
-    "block-channels": "block_channels"
+    "block-channels": "block_channels",
+    "hide-sidebar-recommendations": "hide_sidebar_recommendations"
 };
 
 // Mode presets
@@ -346,7 +347,8 @@ const modePresets = {
         hide_shorts: false,
         minimal_homepage: false,
         enable_website_blocking: false,
-        block_channels: false
+        block_channels: false,
+        hide_sidebar_recommendations: false
     },
     "minimal": {
         BTubeOn: true,
@@ -354,15 +356,17 @@ const modePresets = {
         hide_shorts: true,
         minimal_homepage: true,
         enable_website_blocking: true,
-        block_channels: true
+        block_channels: true,
+        hide_sidebar_recommendations: false
     },
     "high-focus": {
         BTubeOn: true,
-        redirect_home: true,
+        redirect_home: false,
         hide_shorts: true,
         minimal_homepage: true,
         enable_website_blocking: true,
-        block_channels: true
+        block_channels: true,
+        hide_sidebar_recommendations: true
     }
 };
 
@@ -686,6 +690,12 @@ function initSettingsToggles() {
                         }
                     });
                     pendingData.btube_pending_settings = settingsOnly;
+                    
+                    // Store the selected mode to preserve custom mode selection
+                    const selectedMode = document.querySelector('input[name="settings-mode"]:checked')?.value;
+                    if (selectedMode) {
+                        pendingData.btube_pending_mode = selectedMode;
+                    }
                 }
                 if (hasPendingBlocks) {
                     pendingData.btube_pending_block_updates = {};
